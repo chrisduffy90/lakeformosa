@@ -28,6 +28,9 @@ const events = allEvents
         <span class="section-label">Calendar</span>
         <div>
           <h2 class="section-heading">Upcoming events</h2>
+          <div class="placeholder-notice">
+            These are sample events. The board is working on confirming dates and details — check back soon or <a href="/contact">contact us</a> for the latest.
+          </div>
           <div class="event-list">
             {events.map(event => (
               <div class="event-row">
@@ -69,6 +72,19 @@ const events = allEvents
     subtext="Sign up and we'll send you reminders before every meeting, cleanup, and community gathering."
   />
 </BaseLayout>
+
+<style>
+  .placeholder-notice {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 0.75rem 1rem;
+    border-left: 2px solid var(--border);
+    margin-bottom: 1.25rem;
+    font-style: italic;
+  }
+  .placeholder-notice a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+</style>
 
 <script is:inline>
   const observer = new IntersectionObserver(
