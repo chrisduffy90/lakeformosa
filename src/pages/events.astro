@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const events = [
+  {
+    month: 'May', day: '13', year: 2025,
+    title: 'Monthly Neighborhood Meeting',
+    time: '7:00 PM',
+    location: 'Loch Haven Park Pavilion',
+    description: 'Regular monthly meeting of the Lake Formosa Neighborhood Association. All residents are encouraged to attend. Agenda items include city planning updates, the lakefront beautification project, and board elections.',
+  },
+  {
+    month: 'May', day: '24', year: 2025,
+    title: 'Lake Cleanup Day',
+    time: '9:00 AM – Noon',
+    location: 'Lake Formosa Shoreline (meet at the pavilion)',
+    description: 'Join neighbors for our spring cleanup around Lake Formosa. We will remove invasive plants, collect litter, and plant native species along the shoreline. Gloves and bags provided — just bring water and sunscreen.',
+  },
+  {
+    month: 'Jun', day: '10', year: 2025,
+    title: 'Summer Block Party',
+    time: '5:00 PM – 9:00 PM',
+    location: 'Neighborhood Park on Virginia Drive',
+    description: 'Our annual summer block party is back! Food trucks, live music, lawn games, and a great opportunity to meet your neighbors. Free and open to all Lake Formosa residents and their guests.',
+  },
+  {
+    month: 'Jun', day: '17', year: 2025,
+    title: 'Monthly Neighborhood Meeting',
+    time: '7:00 PM',
+    location: 'Loch Haven Park Pavilion',
+    description: 'June monthly meeting. Topics will include summer safety updates, Parks & Recreation news, and a review of the block party.',
+  },
+  {
+    month: 'Jul', day: '4', year: 2025,
+    title: 'Independence Day Celebration',
+    time: '6:00 PM',
+    location: 'Lake Formosa Shoreline',
+    description: 'Watch the fireworks from the lake. Bring blankets and chairs. Community potluck — bring a dish to share. No glass containers please.',
+  },
+  {
+    month: 'Jul', day: '15', year: 2025,
+    title: 'Monthly Neighborhood Meeting',
+    time: '7:00 PM',
+    location: 'Loch Haven Park Pavilion',
+    description: 'Regular July meeting. Summer updates, neighborhood watch report, and open forum.',
+  },
+];
+---
+
+<BaseLayout title="Events — Lake Formosa Neighborhood Association">
+  <div class="page-header">
+    <h1>Events &amp; Meetings</h1>
+    <p>Stay connected with what's happening in Lake Formosa.</p>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Upcoming Events</h2>
+      <hr class="divider" />
+      <div class="event-list">
+        {events.map(event => (
+          <div class="event-item event-item--full">
+            <div class="event-date">
+              <div class="month">{event.month}</div>
+              <div class="day">{event.day}</div>
+            </div>
+            <div class="event-info">
+              <h3>{event.title}</h3>
+              <p class="event-meta">
+                <span>🕐 {event.time}</span>
+                &nbsp;&middot;&nbsp;
+                <span>📍 {event.location}</span>
+              </p>
+              <p class="event-desc">{event.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="container">
+      <h2 class="section-title">Standing Meetings</h2>
+      <hr class="divider" />
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">📅</div>
+          <h3>Monthly General Meeting</h3>
+          <p>Second Tuesday of every month at 7:00 PM. Loch Haven Park Pavilion, 2267 N Mills Ave, Orlando FL 32803. All residents welcome.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏛️</div>
+          <h3>Board Meetings</h3>
+          <p>Held the first Monday of each quarter. Open to residents. Contact us if you'd like to add an agenda item before the meeting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Submit an Event</h2>
+      <hr class="divider" />
+      <p class="section-lead">Have a neighborhood event you'd like listed here? Let us know.</p>
+      <a href="/contact" class="btn btn-primary">Contact Us</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .event-item--full { align-items: flex-start; }
+  .event-meta { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; }
+  .event-desc { font-size: 0.9rem; color: var(--text); line-height: 1.6; margin-top: 0.25rem; font-family: system-ui, sans-serif; }
+</style>

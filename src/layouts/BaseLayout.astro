@@ -1,0 +1,63 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Lake Formosa Neighborhood Association',
+  description = 'The official website of the Lake Formosa Neighborhood Association in Orlando, Florida.',
+} = Astro.props;
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/about', label: 'About' },
+  { href: '/events', label: 'Events' },
+  { href: '/contact', label: 'Contact' },
+];
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <nav class="site-nav">
+      <div class="nav-inner">
+        <a href="/" class="nav-brand">
+          Lake Formosa NA
+        </a>
+        <ul class="nav-links">
+          {navLinks.map(link => (
+            <li>
+              <a
+                href={link.href}
+                class={currentPath === link.href ? 'active' : ''}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+
+    <slot />
+
+    <footer class="site-footer">
+      <p>
+        &copy; {new Date().getFullYear()} Lake Formosa Neighborhood Association &mdash; Orlando, FL |
+        <a href="mailto:info@lakeformosa.org">info@lakeformosa.org</a>
+      </p>
+    </footer>
+  </body>
+</html>
