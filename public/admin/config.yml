@@ -60,13 +60,8 @@ collections:
         hint: "Full name, or 'Open Position' if unfilled"
       - label: Role
         name: role
-        widget: select
-        options:
-          - President
-          - Vice President
-          - Secretary
-          - Treasurer
-          - Member at Large
+        widget: string
+        hint: "e.g. President, Treasurer, Vice President / Interim Secretary"
       - label: Display Order
         name: order
         widget: number
