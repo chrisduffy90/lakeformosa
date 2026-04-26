@@ -1,75 +1,45 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-
-const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
 ---
 
 <BaseLayout>
-  <!-- MAP HERO -->
-  <section id="map-section">
-    <div id="map"></div>
-
-    <div class="map-overlay">
-      <h1>Lake Formosa</h1>
-      <p>Your neighborhood association for one of Orlando's most beloved urban lakes and surrounding community.</p>
-      <div class="map-overlay-links">
-        <a href="/events">Upcoming events →</a>
-        <a href="/about">About the association →</a>
+  <!-- HERO -->
+  <header class="home-hero">
+    <div class="home-hero-inner">
+      <p class="home-hero-label">Orlando, Florida</p>
+      <h1>Lake Formosa<br/>Neighborhood<br/>Association</h1>
+      <p class="home-hero-sub">Advocating for neighbors, protecting the lake,<br/>and building community since the early 20th century.</p>
+      <div class="home-hero-links">
+        <a href="/events" class="text-link">Upcoming events →</a>
+        <a href="/about" class="text-link">Our story →</a>
       </div>
     </div>
-  </section>
+  </header>
 
-  <!-- ABOUT BLURB -->
+  <!-- INTRO -->
   <section class="surface">
     <div class="section-inner">
       <div class="section-grid fade-in">
         <span class="section-label">Who We Are</span>
         <div class="section-body">
-          <h2 class="section-heading">Neighbors advocating for the place we call home</h2>
-          <p>The Lake Formosa Neighborhood Association represents residents in one of Orlando's most distinctive urban neighborhoods — centered around the shimmering lake that borders the Loch Haven Cultural Park.</p>
-          <p>We meet monthly, engage with city hall on planning and zoning, organize community events, and work to protect the natural and historic character of the neighborhood.</p>
+          <h2 class="section-heading">A neighborhood united by its lake</h2>
+          <p>Lake Formosa sits at the edge of the Loch Haven Cultural Park — one of Orlando's most vibrant civic spaces — and our neighborhood wraps around it with craftsman bungalows, mid-century homes, and tree-lined streets that feel rare in central Florida.</p>
+          <p>The association represents all residents. We engage with city hall, organize community events, maintain a neighborhood watch, and work to protect what makes this place worth living in.</p>
           <div class="info-box">
-            <strong>Monthly meetings</strong> are held the second Tuesday of every month at 7:00 PM at the Loch Haven Park Pavilion. All residents are welcome — no membership required.
+            <strong>Monthly meetings</strong> are held the second Tuesday of every month at 7:00 PM at the Loch Haven Park Pavilion, 2267 N Mills Ave. All residents welcome — no membership required.
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- GET INVOLVED -->
+  <!-- UPCOMING EVENTS PREVIEW -->
   <section>
-    <div class="section-inner">
-      <div class="section-grid fade-in">
-        <span class="section-label">Get Involved</span>
-        <div>
-          <h2 class="section-heading">Ways to connect with your neighborhood</h2>
-          <p class="section-body" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 0;">Four things neighbors do most to make Lake Formosa better.</p>
-          <div class="card-grid" style="margin-top: 1.5rem;">
-            <div class="grid-card">
-              <h3>Attend Meetings</h3>
-              <p>Monthly general meetings on the second Tuesday. Bring issues, hear updates, vote on matters affecting the neighborhood.</p>
-            </div>
-            <div class="grid-card">
-              <h3>Join a Committee</h3>
-              <p>Safety, beautification, parks, and advocacy. Committees do the real work — and they always need more hands.</p>
-            </div>
-            <div class="grid-card">
-              <h3>Volunteer</h3>
-              <p>Lake cleanups, tree plantings, community events. Seasonal opportunities to contribute a few hours to the neighborhood.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- UPCOMING EVENTS -->
-  <section class="surface">
     <div class="section-inner">
       <div class="section-grid fade-in">
         <span class="section-label">Coming Up</span>
         <div>
-          <h2 class="section-heading">Upcoming events &amp; meetings</h2>
+          <h2 class="section-heading">What's happening soon</h2>
           <div class="event-list">
             <div class="event-row">
               <div class="event-date-block">
@@ -78,7 +48,7 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
               </div>
               <div class="event-info">
                 <h3>Monthly Neighborhood Meeting</h3>
-                <p>7:00 PM · Loch Haven Park Pavilion · All residents welcome</p>
+                <p class="event-meta">7:00 PM · Loch Haven Park Pavilion</p>
               </div>
             </div>
             <div class="event-row">
@@ -88,7 +58,7 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
               </div>
               <div class="event-info">
                 <h3>Lake Cleanup Day</h3>
-                <p>9:00 AM · Lake Formosa Shoreline · Gloves and bags provided</p>
+                <p class="event-meta">9:00 AM · Lake Formosa Shoreline</p>
               </div>
             </div>
             <div class="event-row">
@@ -98,67 +68,120 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
               </div>
               <div class="event-info">
                 <h3>Summer Block Party</h3>
-                <p>5:00 PM · Virginia Drive Park · Food, music, open to all residents</p>
+                <p class="event-meta">5:00 PM · Virginia Drive Park</p>
               </div>
             </div>
           </div>
-          <p style="margin-top: 1.5rem;">
-            <a href="/events" class="text-link">View full event calendar →</a>
-          </p>
+          <p style="margin-top: 1.5rem;"><a href="/events" class="text-link">Full calendar →</a></p>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- EMAIL SIGNUP -->
+  <section id="signup">
+    <div class="signup-inner">
+      <div class="signup-text fade-in">
+        <h2>Stay in the loop</h2>
+        <p>Get neighborhood news, meeting reminders, and event announcements delivered to your inbox.</p>
+      </div>
+      <form class="signup-form fade-in" id="signup-form" novalidate>
+        <input type="text" placeholder="First name" id="signup-firstname" />
+        <input type="text" placeholder="Last name" id="signup-lastname" />
+        <span class="field-error" id="name-error"></span>
+        <input type="email" placeholder="Email address" id="signup-email" required />
+        <span class="field-error" id="email-error"></span>
+        <button type="submit">Stay Updated →</button>
+        <span class="field-error" id="form-error"></span>
+      </form>
+    </div>
+  </section>
 </BaseLayout>
 
-<!-- Mapbox -->
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.css" rel="stylesheet" />
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.js" is:inline></script>
-
-<script define:vars={{ mapboxToken }}>
-  mapboxgl.accessToken = mapboxToken;
-
-  const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/outdoors-v12',
-    center: [-81.36974, 28.56835],
-    zoom: 14.8,
-    pitch: 30,
-    scrollZoom: false,
-  });
-
-  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-
-  const el = document.createElement('div');
-  el.style.cssText = `
-    width: 10px; height: 10px;
-    background: #4a5568; border: 2px solid white;
-    border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  `;
-
-  new mapboxgl.Marker(el)
-    .setLngLat([-81.36974, 28.56835])
-    .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong>Lake Formosa</strong>'))
-    .addTo(map);
-
-  if (window.innerWidth <= 768) {
-    map.dragPan.disable();
-    map.touchZoomRotate.disable();
+<style>
+  .home-hero {
+    padding-top: var(--nav-height);
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
   }
+  .home-hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 5rem 2.5rem 4.5rem;
+    width: 100%;
+  }
+  .home-hero-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+  .home-hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 400;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+  }
+  .home-hero-sub {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 2.25rem;
+    font-weight: 300;
+  }
+  .home-hero-links { display: flex; gap: 2rem; flex-wrap: wrap; }
 
-  // TODO: add neighborhood boundary — replace BOUNDARY_GEOJSON with data from
-  // City of Orlando GIS portal (data.cityoforlando.net), then uncomment:
-  // map.on('load', () => {
-  //   map.addSource('boundary', { type: 'geojson', data: BOUNDARY_GEOJSON });
-  //   map.addLayer({ id: 'boundary-fill', type: 'fill', source: 'boundary',
-  //     paint: { 'fill-color': '#4a5568', 'fill-opacity': 0.1 } });
-  //   map.addLayer({ id: 'boundary-line', type: 'line', source: 'boundary',
-  //     paint: { 'line-color': '#4a5568', 'line-width': 1.5 } });
-  // });
+  @media (max-width: 480px) {
+    .home-hero-inner { padding: 4rem 1.25rem 3rem; }
+    .home-hero-links { flex-direction: column; gap: 1rem; }
+  }
+</style>
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.15 });
-
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Signup form
+  const firstNameInput = document.getElementById('signup-firstname');
+  const lastNameInput  = document.getElementById('signup-lastname');
+  const emailInput     = document.getElementById('signup-email');
+  const nameError      = document.getElementById('name-error');
+  const emailError     = document.getElementById('email-error');
+  const formError      = document.getElementById('form-error');
+
+  function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
+
+  firstNameInput.addEventListener('input', () => { nameError.textContent = ''; });
+  lastNameInput.addEventListener('input',  () => { nameError.textContent = ''; });
+  emailInput.addEventListener('input',     () => { emailError.textContent = ''; });
+
+  document.getElementById('signup-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    nameError.textContent = ''; emailError.textContent = ''; formError.textContent = '';
+
+    const first_name = firstNameInput.value.trim();
+    const email      = emailInput.value;
+    let valid = true;
+
+    if (!first_name) { nameError.textContent = 'Please enter your first name'; valid = false; }
+    if (!isValidEmail(email)) { emailError.textContent = 'Please enter a valid email address'; valid = false; }
+    if (!valid) return;
+
+    const btn = e.target.querySelector('button');
+    btn.textContent = 'Submitting...'; btn.disabled = true;
+
+    // TODO: wire to backend endpoint
+    setTimeout(() => {
+      btn.textContent = "You're on the list ✓";
+      btn.style.opacity = '0.6';
+    }, 800);
+  });
 </script>

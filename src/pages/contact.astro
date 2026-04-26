@@ -6,7 +6,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <div class="page-hero">
     <div class="page-hero-inner">
       <h1>Contact Us</h1>
-      <p>Reach the board, report a concern, or find out how to get involved.</p>
+      <p>Reach the board, flag a neighborhood concern, or find out how to get more involved.</p>
     </div>
   </div>
 
@@ -15,8 +15,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="section-grid fade-in">
         <span class="section-label">Get in Touch</span>
         <div>
-          <h2 class="section-heading">We'd love to hear from you</h2>
-          <div class="contact-grid">
+          <h2 class="section-heading">Send a message</h2>
+          <div class="two-col">
             <!-- FORM -->
             <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
               <input type="hidden" name="form-name" value="contact" />
@@ -26,12 +26,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <label for="name">Your Name</label>
                 <input type="text" id="name" name="name" required placeholder="Jane Smith" />
               </div>
-
               <div class="form-row">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required placeholder="jane@example.com" />
               </div>
-
               <div class="form-row">
                 <label for="subject">Topic</label>
                 <select id="subject" name="subject">
@@ -40,49 +38,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                   <option value="concern">Neighborhood concern</option>
                   <option value="board">Board or membership</option>
                   <option value="volunteer">Volunteering</option>
+                  <option value="photo">Gallery photo submission</option>
                   <option value="media">Media inquiry</option>
                 </select>
               </div>
-
               <div class="form-row">
                 <label for="message">Message</label>
                 <textarea id="message" name="message" required placeholder="How can we help?"></textarea>
               </div>
-
-              <button type="submit" class="form-submit">Send Message →</button>
+              <button type="submit" class="btn-submit">Send Message →</button>
             </form>
 
-            <!-- INFO -->
+            <!-- CONTACT INFO -->
             <div class="contact-info-list">
               <div class="contact-info-item">
                 <div class="contact-info-label">Email</div>
                 <a href="mailto:info@lakeformosa.org">info@lakeformosa.org</a>
               </div>
-
-              <div class="contact-info-item">
-                <div class="contact-info-label">Meeting Location</div>
-                Loch Haven Park Pavilion<br />
-                2267 N Mills Ave<br />
-                Orlando, FL 32803
-              </div>
-
               <div class="contact-info-item">
                 <div class="contact-info-label">Monthly Meetings</div>
                 Second Tuesday of each month<br />
-                7:00 PM · All residents welcome
+                7:00 PM · All residents welcome<br />
+                <a href="https://maps.google.com/?q=2267+N+Mills+Ave+Orlando+FL+32803" target="_blank" rel="noopener">
+                  Loch Haven Park Pavilion<br />2267 N Mills Ave, Orlando FL 32803
+                </a>
               </div>
-
               <div class="contact-info-item">
                 <div class="contact-info-label">Non-Emergency Police</div>
                 Orlando Police Dept<br />
                 <a href="tel:+14072462470">(407) 246-2470</a>
               </div>
-
               <div class="contact-info-item">
                 <div class="contact-info-label">City of Orlando</div>
                 <a href="https://www.orlando.gov/Resident-Services/City-311" target="_blank" rel="noopener">
                   City 311 — Report a neighborhood issue →
                 </a>
+              </div>
+              <div class="contact-info-item">
+                <div class="contact-info-label">Dues &amp; Membership</div>
+                <a href="/dues">Pay dues or check membership status →</a>
               </div>
             </div>
           </div>
@@ -93,8 +87,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script is:inline>
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.15 });
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 </script>

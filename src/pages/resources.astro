@@ -1,0 +1,121 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const groups = [
+  {
+    label: 'Neighborhood & Environment',
+    items: [
+      {
+        title: 'Loch Haven Lakes',
+        desc: 'Monitor water quality, report litter and wildlife distress, and track environmental health across the Loch Haven lake chain.',
+        url: 'https://lochhavenlakes.com',
+      },
+      {
+        title: 'City of Orlando Neighborhood Relations',
+        desc: 'Connect with your city neighborhood district liaison, find meeting minutes, and access neighborhood planning resources.',
+        url: 'https://www.orlando.gov/Our-Government/Departments-Offices/Community-Development-Department/Neighborhood-Relations',
+      },
+      {
+        title: 'City 311 — Report a Problem',
+        desc: 'Report potholes, broken streetlights, overgrown rights-of-way, illegal dumping, or any other city service issue online.',
+        url: 'https://www.orlando.gov/Resident-Services/City-311',
+      },
+      {
+        title: 'Loch Haven Cultural Park',
+        desc: 'Official site for the Orlando Museum of Art, Orlando Science Center, Orlando Repertory Theatre, and other park events.',
+        url: 'https://www.lochhaven.org',
+      },
+    ],
+  },
+  {
+    label: 'Public Safety',
+    items: [
+      {
+        title: 'Orlando Police Department',
+        desc: 'Non-emergency line: (407) 246-2470. Find crime maps, download reports, and access neighborhood watch resources.',
+        url: 'https://www.orlando.gov/Our-Government/Departments-Offices/Orlando-Police-Department',
+      },
+      {
+        title: 'Nextdoor — Lake Formosa',
+        desc: 'Connect with neighbors on Nextdoor for real-time safety alerts, lost pets, local recommendations, and more.',
+        url: 'https://nextdoor.com',
+      },
+    ],
+  },
+  {
+    label: 'City & Government',
+    items: [
+      {
+        title: 'City of Orlando GIS / Open Data',
+        desc: 'Access neighborhood boundary files, zoning maps, infrastructure data, and other GIS datasets from the city.',
+        url: 'https://data.cityoforlando.net',
+      },
+      {
+        title: 'Orange County Property Appraiser',
+        desc: 'Look up property records, assessed values, owner history, and tax information for any property in Orange County.',
+        url: 'https://www.ocpafl.org',
+      },
+      {
+        title: 'City of Orlando Zoning & Development',
+        desc: 'Track active permits, zoning applications, and development projects that may affect the neighborhood.',
+        url: 'https://www.orlando.gov/Our-Government/Departments-Offices/Economic-Development/Building-and-Permitting',
+      },
+    ],
+  },
+  {
+    label: 'Environment & Recreation',
+    items: [
+      {
+        title: 'Florida Department of Environmental Protection',
+        desc: 'Report water quality concerns, access lake monitoring data, and find information about Florida\'s waterways.',
+        url: 'https://floridadep.gov',
+      },
+      {
+        title: 'Orlando Parks & Recreation',
+        desc: 'Find hours, programs, and maintenance contacts for Loch Haven Park and other Orlando parks near the neighborhood.',
+        url: 'https://www.orlando.gov/Parks-the-Environment/Parks-Recreation',
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout title="Resources — Lake Formosa Neighborhood Association">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Resources</h1>
+      <p>Useful links for Lake Formosa residents — city services, safety, environment, and neighbors.</p>
+    </div>
+  </div>
+
+  {groups.map((group, i) => (
+    <section class={i % 2 === 0 ? 'surface' : ''}>
+      <div class="section-inner">
+        <div class="section-grid fade-in">
+          <span class="section-label">{group.label}</span>
+          <div>
+            <div class="resource-list">
+              {group.items.map(item => (
+                <a href={item.url} target="_blank" rel="noopener noreferrer" class="resource-row">
+                  <div class="resource-row-info">
+                    <h3>{item.title}</h3>
+                    <p>{item.desc}</p>
+                  </div>
+                  <span class="resource-arrow">↗</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  ))}
+</BaseLayout>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>

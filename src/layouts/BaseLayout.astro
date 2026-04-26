@@ -11,7 +11,17 @@ const {
   description = 'The official website of the Lake Formosa Neighborhood Association in Orlando, Florida.',
 } = Astro.props;
 
-const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const nav = [
+  { href: '/about',     label: 'About' },
+  { href: '/board',     label: 'Board' },
+  { href: '/events',    label: 'Events' },
+  { href: '/resources', label: 'Resources' },
+  { href: '/gallery',   label: 'Gallery' },
+  { href: '/dues',      label: 'Dues' },
+  { href: '/contact',   label: 'Contact' },
+];
 ---
 
 <!doctype html>
@@ -27,9 +37,12 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     <nav>
       <a href="/" class="site-name">Lake Formosa NA</a>
       <div class="nav-links">
-        <a href="/about" class={`nav-text-link${currentPath === '/about' ? ' active' : ''}`}>About</a>
-        <a href="/events" class={`nav-text-link${currentPath === '/events' ? ' active' : ''}`}>Events</a>
-        <a href="/contact" class="nav-cta">Contact Us</a>
+        {nav.map(link => (
+          <a
+            href={link.href}
+            class={`nav-text-link${path === link.href ? ' active' : ''}`}
+          >{link.label}</a>
+        ))}
         <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
@@ -37,32 +50,28 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     </nav>
 
     <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
-      <a href="/about">About</a>
-      <a href="/events">Events</a>
-      <a href="/contact">Contact Us</a>
+      {nav.map(link => <a href={link.href}>{link.label}</a>)}
     </div>
 
     <slot />
 
     <footer>
-      <span>© {new Date().getFullYear()} Lake Formosa Neighborhood Association</span>
-      <span><a href="/contact">Get in touch</a> · Orlando, Florida</span>
+      <span>© {new Date().getFullYear()} Lake Formosa Neighborhood Association · Orlando, FL</span>
+      <span><a href="/contact">Get in touch</a></span>
     </footer>
 
     <script is:inline>
       const hamburger = document.getElementById('hamburger');
       const mobileMenu = document.getElementById('mobile-menu');
-
       if (hamburger && mobileMenu) {
-        hamburger.addEventListener('click', (e) => {
+        hamburger.addEventListener('click', e => {
           e.stopPropagation();
-          const isOpen = mobileMenu.classList.toggle('open');
-          hamburger.classList.toggle('open', isOpen);
-          hamburger.setAttribute('aria-expanded', String(isOpen));
-          mobileMenu.setAttribute('aria-hidden', String(!isOpen));
+          const open = mobileMenu.classList.toggle('open');
+          hamburger.classList.toggle('open', open);
+          hamburger.setAttribute('aria-expanded', String(open));
+          mobileMenu.setAttribute('aria-hidden', String(!open));
         });
-
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', e => {
           if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
             mobileMenu.classList.remove('open');
             hamburger.classList.remove('open');
@@ -70,15 +79,12 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
             mobileMenu.setAttribute('aria-hidden', 'true');
           }
         });
-
-        mobileMenu.querySelectorAll('a').forEach(link => {
-          link.addEventListener('click', () => {
-            mobileMenu.classList.remove('open');
-            hamburger.classList.remove('open');
-            hamburger.setAttribute('aria-expanded', 'false');
-            mobileMenu.setAttribute('aria-hidden', 'true');
-          });
-        });
+        mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+          mobileMenu.classList.remove('open');
+          hamburger.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+          mobileMenu.setAttribute('aria-hidden', 'true');
+        }));
       }
     </script>
   </body>

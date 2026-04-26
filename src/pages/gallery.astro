@@ -1,0 +1,78 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// TODO: Replace these with real Cloudinary URLs.
+// Pattern: https://res.cloudinary.com/<cloud_name>/image/upload/<transforms>/<public_id>
+// Recommended transforms for gallery thumbnails: w_800,h_600,c_fill,q_auto,f_auto
+const photos: { src: string; alt: string; caption?: string }[] = [
+  // { src: 'https://res.cloudinary.com/YOUR_CLOUD/image/upload/w_800,h_600,c_fill,q_auto,f_auto/lake-formosa-1', alt: 'Lake Formosa at sunset', caption: 'Lake Formosa at sunset' },
+  // Add more entries here when photos are ready
+];
+
+const placeholderCount = 9;
+---
+
+<BaseLayout title="Gallery — Lake Formosa Neighborhood Association">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Neighborhood Gallery</h1>
+      <p>Photos of Lake Formosa, Loch Haven Park, and the community events that bring us together.</p>
+    </div>
+  </div>
+
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Photos</span>
+        <div>
+          {photos.length > 0 ? (
+            <div class="gallery-grid">
+              {photos.map(photo => (
+                <div class="gallery-cell">
+                  <img src={photo.src} alt={photo.alt} loading="lazy" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.5rem;">
+                Photos coming soon — the gallery will be powered by Cloudinary and filled with shots of the lake, the neighborhood, and our community events.
+              </p>
+              <div class="gallery-grid">
+                {Array.from({ length: placeholderCount }).map((_, i) => (
+                  <div class="gallery-cell">
+                    <div class="gallery-placeholder">
+                      <span class="gallery-placeholder-icon">◻</span>
+                      <span>Photo {i + 1}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Submit</span>
+        <div class="section-body">
+          <h2 class="section-heading">Share your photos</h2>
+          <p>Have a great shot of the lake, the park, or a neighborhood event? We'd love to feature it in the gallery. Send photos to us and we'll include them with credit to you.</p>
+          <p><a href="/contact" class="text-link">Submit a photo →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>

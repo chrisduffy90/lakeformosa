@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Dues — Lake Formosa Neighborhood Association">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Membership Dues</h1>
+      <p>Annual dues support association operations, community events, and neighborhood advocacy.</p>
+    </div>
+  </div>
+
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Annual Dues</span>
+        <div>
+          <h2 class="section-heading">Support your neighborhood association</h2>
+
+          <div class="dues-placeholder">
+            <p>Online payment coming soon. Dues currently accepted at monthly meetings or by mail.</p>
+            <div class="dues-amount">$25</div>
+            <div class="dues-period">Per household · Per year</div>
+            <p>Dues are due by January 31st each year. Renewing members receive a reminder at the December general meeting.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">What It Covers</span>
+        <div class="section-body">
+          <h2 class="section-heading">Where your dues go</h2>
+          <p>Annual membership dues keep the association running. They fund the costs of holding monthly meetings, producing printed communications, maintaining this website, and supporting community events throughout the year.</p>
+          <p>Dues-paying members are eligible to vote in board elections and on matters brought to the membership at general meetings. Attending meetings and joining committees is open to all residents regardless of dues status.</p>
+          <div class="info-box">
+            <strong>Can't pay online yet?</strong> Bring a check or cash to any monthly meeting, made out to <em>Lake Formosa Neighborhood Association</em>. You can also <a href="/contact">contact the treasurer</a> to arrange payment by mail.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Questions</span>
+        <div class="section-body">
+          <h2 class="section-heading">Membership questions</h2>
+          <p>Questions about your membership status, payment history, or how to update your contact information with the association? Get in touch and the treasurer will follow up.</p>
+          <p><a href="/contact" class="text-link">Contact the treasurer →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>

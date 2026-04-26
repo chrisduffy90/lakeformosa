@@ -1,25 +1,36 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
 ---
 
 <BaseLayout title="About — Lake Formosa Neighborhood Association">
   <div class="page-hero">
     <div class="page-hero-inner">
-      <h1>About the Association</h1>
-      <p>History, mission, boundaries, and the people who keep the neighborhood running.</p>
+      <h1>Our Neighborhood</h1>
+      <p>The history, character, and boundaries of Lake Formosa.</p>
     </div>
   </div>
 
-  <!-- HISTORY -->
+  <!-- HISTORY + MAP -->
   <section class="surface">
     <div class="section-inner">
       <div class="section-grid fade-in">
-        <span class="section-label">Our History</span>
-        <div class="section-body">
-          <h2 class="section-heading">One of Orlando's most distinctive urban neighborhoods</h2>
-          <p>Lake Formosa is centered around the shimmering 70-acre lake that gives it its name, bordered by the Loch Haven Cultural Park — home to the Orlando Museum of Art, the Orlando Science Center, and the Orlando Repertory Theatre.</p>
-          <p>Established in the early 20th century, the neighborhood features craftsman bungalows, mid-century homes, and contemporary infill housing woven together by a tree canopy and walkable streets that remain rare in central Florida.</p>
-          <p>The Lake Formosa Neighborhood Association was formed to preserve that character, advocate for residents at city hall, and foster the kind of community that makes a neighborhood worth protecting.</p>
+        <span class="section-label">History</span>
+        <div>
+          <div class="section-body">
+            <h2 class="section-heading">A neighborhood shaped by its lake</h2>
+            <p>Lake Formosa is one of Orlando's most distinctive urban neighborhoods, centered around the shimmering 70-acre lake that gives it its name. Bordered by the Loch Haven Cultural Park — home to the Orlando Museum of Art, the Orlando Science Center, and the Orlando Repertory Theatre — the neighborhood blends natural beauty with a rich civic life that has been building since the early 20th century.</p>
+            <p>The area features craftsman bungalows, mid-century modern homes, and newer infill housing woven together by a mature tree canopy and streets that remain genuinely walkable. Proximity to Mills Avenue, the cultural park, and downtown Orlando make it one of central Florida's most sought-after addresses.</p>
+            <p>The Lake Formosa Neighborhood Association was founded to preserve that character — advocating at city hall on zoning and development decisions, organizing the community around shared concerns, and protecting the lake and green spaces that define the neighborhood's identity.</p>
+          </div>
+
+          <!-- MAP -->
+          <div class="map-container">
+            <div id="map"></div>
+          </div>
+
+          <p class="map-caption">Lake Formosa and the surrounding neighborhood in Orlando, FL. Boundary overlay coming once official GeoJSON is available from the City of Orlando GIS portal.</p>
         </div>
       </div>
     </div>
@@ -29,76 +40,28 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <section>
     <div class="section-inner">
       <div class="section-grid fade-in">
-        <span class="section-label">Our Mission</span>
-        <div>
-          <h2 class="section-heading">Advocacy, community, and stewardship</h2>
-          <div class="card-grid card-grid-2">
-            <div class="grid-card">
-              <h3>Advocacy</h3>
-              <p>Represent resident interests at City Hall, planning board meetings, and with city commissioners on zoning, development, and infrastructure issues that affect the neighborhood.</p>
-            </div>
-            <div class="grid-card">
-              <h3>Community</h3>
-              <p>Build meaningful connections through events, monthly meetings, and shared projects that bring neighbors together throughout the year.</p>
-            </div>
-            <div class="grid-card">
-              <h3>Stewardship</h3>
-              <p>Protect and improve our green spaces, lake water quality, tree canopy, and the historic character of the built environment around Lake Formosa.</p>
-            </div>
-            <div class="grid-card">
-              <h3>Communication</h3>
-              <p>Keep residents informed about local news, city projects, safety concerns, and opportunities to get involved in the neighborhood.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- BOARD -->
-  <section class="surface">
-    <div class="section-inner">
-      <div class="section-grid fade-in">
-        <span class="section-label">Leadership</span>
-        <div>
-          <h2 class="section-heading">Board of Directors</h2>
-          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7;">
-            Elected by residents annually at the December general meeting. Interested in serving?
-            <a href="/contact" style="color: var(--accent); text-decoration: underline; text-underline-offset: 2px;">Reach out to us.</a>
-          </p>
-          <div class="board-grid">
-            <div class="board-cell">
-              <div class="board-role">President</div>
-              <div class="board-name">Open — 2025</div>
-            </div>
-            <div class="board-cell">
-              <div class="board-role">Vice President</div>
-              <div class="board-name">Open — 2025</div>
-            </div>
-            <div class="board-cell">
-              <div class="board-role">Secretary</div>
-              <div class="board-name">Open — 2025</div>
-            </div>
-            <div class="board-cell">
-              <div class="board-role">Treasurer</div>
-              <div class="board-name">Open — 2025</div>
-            </div>
-          </div>
+        <span class="section-label">Mission</span>
+        <div class="section-body">
+          <h2 class="section-heading">What we stand for</h2>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">Advocacy.</strong> We represent resident interests at City Hall, in front of planning and zoning boards, and with elected officials on every issue that affects our neighborhood.</p>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">Community.</strong> Monthly meetings, volunteer events, block parties — we build the kind of connections that make a neighborhood more than a collection of houses.</p>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">Stewardship.</strong> We work to protect the lake's water quality, the neighborhood's tree canopy, and the historic character of the built environment.</p>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">Communication.</strong> We keep residents informed and make it easy to get involved — whether that's attending a meeting, joining a committee, or just signing up for updates.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- BOUNDARIES -->
-  <section>
+  <section class="surface">
     <div class="section-inner">
       <div class="section-grid fade-in">
         <span class="section-label">Boundaries</span>
         <div class="section-body">
-          <h2 class="section-heading">Neighborhood boundaries</h2>
-          <p>The Lake Formosa neighborhood is generally bounded by Rollins Street to the north, Colonial Drive (US 50) to the south, Orange Avenue to the east, and I-4 to the west.</p>
+          <h2 class="section-heading">Where is Lake Formosa?</h2>
+          <p>The neighborhood is generally bounded by Rollins Street to the north, Colonial Drive (US 50) to the south, Orange Avenue to the east, and I-4 to the west.</p>
           <div class="info-box">
-            <strong>Official boundaries</strong> are defined by the City of Orlando. The interactive map on our <a href="/" style="color: var(--accent); text-decoration: underline; text-underline-offset: 2px;">homepage</a> shows the neighborhood in context. A precise boundary overlay from the City of Orlando GIS portal will be added soon.
+            <strong>Official boundaries</strong> are defined and maintained by the City of Orlando. For precise GIS boundary data, visit the <a href="https://data.cityoforlando.net" target="_blank" rel="noopener">City of Orlando Open Data portal</a>.
           </div>
         </div>
       </div>
@@ -106,9 +69,69 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 </BaseLayout>
 
-<script is:inline>
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.15 });
+<!-- Mapbox -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.js" is:inline></script>
+
+<script define:vars={{ mapboxToken }}>
+  mapboxgl.accessToken = mapboxToken;
+
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/chrisduffy90/cmmgqwd3h003101qn19rk2mdw',
+    center: [-81.36974, 28.56835],
+    zoom: 14.5,
+    pitch: 25,
+    scrollZoom: false,
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+  const el = document.createElement('div');
+  el.style.cssText = `
+    width: 10px; height: 10px;
+    background: #3d5a4f; border: 2px solid white;
+    border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+  `;
+  new mapboxgl.Marker(el)
+    .setLngLat([-81.36974, 28.56835])
+    .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong>Lake Formosa</strong><br>Orlando, FL'))
+    .addTo(map);
+
+  // TODO: swap BOUNDARY_GEOJSON with data from City of Orlando GIS portal
+  // map.on('load', () => {
+  //   map.addSource('boundary', { type: 'geojson', data: BOUNDARY_GEOJSON });
+  //   map.addLayer({ id: 'boundary-fill', type: 'fill', source: 'boundary',
+  //     paint: { 'fill-color': '#3d5a4f', 'fill-opacity': 0.1 } });
+  //   map.addLayer({ id: 'boundary-line', type: 'line', source: 'boundary',
+  //     paint: { 'line-color': '#3d5a4f', 'line-width': 1.5 } });
+  // });
+
+  if (window.innerWidth <= 768) {
+    map.dragPan.disable();
+    map.touchZoomRotate.disable();
+  }
+
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 </script>
+
+<style>
+  .map-container {
+    margin-top: 2rem;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  #map { width: 100%; height: 400px; }
+  .map-caption {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-top: 0.6rem;
+    font-style: italic;
+  }
+</style>

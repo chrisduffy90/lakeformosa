@@ -2,12 +2,41 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const events = [
-  { month: 'May', day: '13', title: 'Monthly Neighborhood Meeting', meta: '7:00 PM · Loch Haven Park Pavilion', desc: 'Regular monthly meeting. Agenda includes city planning updates, the lakefront beautification project, and open forum. All residents welcome.' },
-  { month: 'May', day: '24', title: 'Lake Cleanup Day', meta: '9:00 AM – Noon · Lake Formosa Shoreline', desc: 'Spring cleanup around the lake — invasive plant removal, litter collection, and native plantings along the shoreline. Gloves and bags provided.' },
-  { month: 'Jun', day: '10', title: 'Summer Block Party', meta: '5:00 PM – 9:00 PM · Virginia Drive Park', desc: 'Annual summer block party with food trucks, live music, and lawn games. Free and open to all Lake Formosa residents and their guests.' },
-  { month: 'Jun', day: '17', title: 'Monthly Neighborhood Meeting', meta: '7:00 PM · Loch Haven Park Pavilion', desc: 'June meeting — summer safety updates, Parks & Recreation news, and block party debrief.' },
-  { month: 'Jul', day: '4', title: 'Independence Day at the Lake', meta: '6:00 PM · Lake Formosa Shoreline', desc: 'Watch fireworks from the lake. Community potluck — bring a dish to share. Blankets and chairs encouraged. No glass containers.' },
-  { month: 'Jul', day: '15', title: 'Monthly Neighborhood Meeting', meta: '7:00 PM · Loch Haven Park Pavilion', desc: 'Regular July meeting. Summer updates, neighborhood watch report, and open forum.' },
+  {
+    month: 'May', day: '13', title: 'Monthly Neighborhood Meeting',
+    meta: '7:00 PM · Loch Haven Park Pavilion',
+    desc: 'Regular monthly meeting. Agenda includes city planning updates, the lakefront beautification project, board announcements, and open forum. All residents welcome.',
+  },
+  {
+    month: 'May', day: '24', title: 'Lake Cleanup Day',
+    meta: '9:00 AM – Noon · Lake Formosa Shoreline',
+    desc: 'Spring cleanup around the lake — invasive plant removal, litter collection, and native plantings along the shoreline. Gloves and bags provided; just bring water and sunscreen.',
+  },
+  {
+    month: 'Jun', day: '10', title: 'Summer Block Party',
+    meta: '5:00 PM – 9:00 PM · Virginia Drive Park',
+    desc: 'Annual summer block party with food trucks, live music, and lawn games. Free and open to all Lake Formosa residents and their guests.',
+  },
+  {
+    month: 'Jun', day: '17', title: 'Monthly Neighborhood Meeting',
+    meta: '7:00 PM · Loch Haven Park Pavilion',
+    desc: 'June meeting — summer safety updates, Parks & Recreation news, block party recap, and open forum.',
+  },
+  {
+    month: 'Jul', day: '4', title: 'Independence Day at the Lake',
+    meta: '6:00 PM · Lake Formosa Shoreline',
+    desc: 'Watch the fireworks from the lake. Community potluck — bring a dish to share. Blankets and chairs encouraged. No glass containers please.',
+  },
+  {
+    month: 'Jul', day: '15', title: 'Monthly Neighborhood Meeting',
+    meta: '7:00 PM · Loch Haven Park Pavilion',
+    desc: 'Regular July meeting. Summer updates, neighborhood watch report, open forum.',
+  },
+  {
+    month: 'Aug', day: '12', title: 'Monthly Neighborhood Meeting',
+    meta: '7:00 PM · Loch Haven Park Pavilion',
+    desc: 'August meeting — back-to-school neighborhood watch reminder, fall event planning, city updates.',
+  },
 ];
 ---
 
@@ -15,20 +44,19 @@ const events = [
   <div class="page-hero">
     <div class="page-hero-inner">
       <h1>Events &amp; Meetings</h1>
-      <p>Stay connected with what's happening in Lake Formosa.</p>
+      <p>Everything coming up in the neighborhood — meetings, cleanups, and community gatherings.</p>
     </div>
   </div>
 
-  <!-- EVENTS LIST -->
   <section class="surface">
     <div class="section-inner">
       <div class="section-grid fade-in">
-        <span class="section-label">Upcoming</span>
+        <span class="section-label">Calendar</span>
         <div>
-          <h2 class="section-heading">What's coming up</h2>
+          <h2 class="section-heading">Upcoming events</h2>
           <div class="event-list">
             {events.map(event => (
-              <div class="event-row event-row--tall">
+              <div class="event-row">
                 <div class="event-date-block">
                   <div class="event-month">{event.month}</div>
                   <div class="event-day">{event.day}</div>
@@ -46,55 +74,27 @@ const events = [
     </div>
   </section>
 
-  <!-- STANDING MEETINGS -->
   <section>
     <div class="section-inner">
       <div class="section-grid fade-in">
         <span class="section-label">Standing</span>
-        <div>
-          <h2 class="section-heading">Regular meetings</h2>
-          <div class="card-grid card-grid-2">
-            <div class="grid-card">
-              <h3>General Meeting</h3>
-              <p>Second Tuesday of every month, 7:00 PM. Loch Haven Park Pavilion, 2267 N Mills Ave. All residents welcome — no membership needed.</p>
-            </div>
-            <div class="grid-card">
-              <h3>Board Meeting</h3>
-              <p>First Monday of each quarter. Open to residents who'd like to observe or add an agenda item. Contact us in advance to participate.</p>
-            </div>
-          </div>
-          <div class="info-box" style="margin-top: 1.75rem;">
-            <strong>Want to add an agenda item?</strong> Email us at least five days before the meeting. We'll do our best to fit it in.
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- SUBMIT EVENT -->
-  <section class="surface">
-    <div class="section-inner">
-      <div class="section-grid fade-in">
-        <span class="section-label">Submit</span>
         <div class="section-body">
-          <h2 class="section-heading">Have an event to share?</h2>
-          <p>If you're organizing a neighborhood event or community activity, let us know and we'll list it here.</p>
-          <p><a href="/contact" class="text-link">Get in touch →</a></p>
+          <h2 class="section-heading">Regular meetings</h2>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">General meetings</strong> are held the second Tuesday of every month at 7:00 PM at the Loch Haven Park Pavilion, 2267 N Mills Ave, Orlando FL 32803. No membership required to attend.</p>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">Board meetings</strong> are held the first Monday of each quarter. Open to residents who'd like to observe or add an agenda item — contact us at least five days in advance.</p>
+          <div class="info-box">
+            <strong>Have an event to add?</strong> If you're organizing a neighborhood activity or community initiative, <a href="/contact">send us the details</a> and we'll list it here.
+          </div>
         </div>
       </div>
     </div>
   </section>
 </BaseLayout>
 
-<style>
-  .event-row--tall { align-items: flex-start; padding: 1.75rem 1.5rem; }
-  .event-meta { font-size: 0.78rem; color: var(--text-secondary); margin: 0.2rem 0 0.4rem; letter-spacing: 0.01em; }
-  .event-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65; }
-</style>
-
 <script is:inline>
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.15 });
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 </script>
