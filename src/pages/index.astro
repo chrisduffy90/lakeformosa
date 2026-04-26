@@ -5,88 +5,108 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
 ---
 
 <BaseLayout>
-  <!-- HERO -->
-  <section class="hero">
-    <h1>Welcome to Lake Formosa</h1>
-    <p class="subtitle">
-      A vibrant, historic neighborhood in the heart of Orlando — united by our lake, our parks, and our community.
-    </p>
-    <div class="hero-actions">
-      <a href="/events" class="btn btn-primary">Upcoming Events</a>
-      <a href="/about" class="btn btn-outline">Learn More</a>
+  <!-- MAP HERO -->
+  <section id="map-section">
+    <div id="map"></div>
+
+    <div class="map-overlay">
+      <h1>Lake Formosa</h1>
+      <p>Your neighborhood association for one of Orlando's most beloved urban lakes and surrounding community.</p>
+      <div class="map-overlay-links">
+        <a href="/events">Upcoming events →</a>
+        <a href="/about">About the association →</a>
+      </div>
     </div>
   </section>
 
-  <!-- QUICK LINKS -->
-  <section class="section section-alt">
-    <div class="container">
-      <h2 class="section-title">Get Involved</h2>
-      <hr class="divider" />
-      <p class="section-lead">Everything you need to connect with your neighbors and make Lake Formosa a better place to live.</p>
-      <div class="cards">
-        <div class="card">
-          <div class="card-icon">📅</div>
-          <h3>Monthly Meetings</h3>
-          <p>Join us the second Tuesday of every month at the Loch Haven Park pavilion. All residents welcome.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">📣</div>
-          <h3>Announcements</h3>
-          <p>Stay up to date on neighborhood news, city planning updates, and local events affecting our community.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🏘️</div>
-          <h3>Neighborhood Watch</h3>
-          <p>Collaborate with neighbors and OPD to keep Lake Formosa safe. Report concerns and share resources.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🌿</div>
-          <h3>Green Spaces</h3>
-          <p>Help maintain and improve our parks, lake access, and green corridors throughout the neighborhood.</p>
+  <!-- ABOUT BLURB -->
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Who We Are</span>
+        <div class="section-body">
+          <h2 class="section-heading">Neighbors advocating for the place we call home</h2>
+          <p>The Lake Formosa Neighborhood Association represents residents in one of Orlando's most distinctive urban neighborhoods — centered around the shimmering lake that borders the Loch Haven Cultural Park.</p>
+          <p>We meet monthly, engage with city hall on planning and zoning, organize community events, and work to protect the natural and historic character of the neighborhood.</p>
+          <div class="info-box">
+            <strong>Monthly meetings</strong> are held the second Tuesday of every month at 7:00 PM at the Loch Haven Park Pavilion. All residents are welcome — no membership required.
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- MAP -->
-  <section class="section">
-    <div class="container">
-      <h2 class="section-title">Our Neighborhood</h2>
-      <hr class="divider" />
-      <p class="section-lead">Lake Formosa sits in the heart of Orlando, bordered by Loch Haven Park and the city's cultural district.</p>
-      <div id="map"></div>
-    </div>
-  </section>
-
-  <!-- UPCOMING EVENTS PREVIEW -->
-  <section class="section section-alt">
-    <div class="container">
-      <h2 class="section-title">Upcoming Events</h2>
-      <hr class="divider" />
-      <div class="event-list">
-        <div class="event-item">
-          <div class="event-date"><div class="month">May</div><div class="day">13</div></div>
-          <div class="event-info">
-            <h3>Monthly Neighborhood Meeting</h3>
-            <p>7:00 PM &middot; Loch Haven Park Pavilion &middot; All residents welcome</p>
-          </div>
-        </div>
-        <div class="event-item">
-          <div class="event-date"><div class="month">May</div><div class="day">24</div></div>
-          <div class="event-info">
-            <h3>Lake Cleanup Day</h3>
-            <p>9:00 AM &middot; Lake Formosa Shoreline &middot; Bring gloves and bags</p>
-          </div>
-        </div>
-        <div class="event-item">
-          <div class="event-date"><div class="month">Jun</div><div class="day">10</div></div>
-          <div class="event-info">
-            <h3>Summer Block Party</h3>
-            <p>5:00 PM &middot; Neighborhood Park &middot; Food, music, and family fun</p>
+  <!-- GET INVOLVED -->
+  <section>
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Get Involved</span>
+        <div>
+          <h2 class="section-heading">Ways to connect with your neighborhood</h2>
+          <p class="section-body" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 0;">Four things neighbors do most to make Lake Formosa better.</p>
+          <div class="card-grid" style="margin-top: 1.5rem;">
+            <div class="grid-card">
+              <h3>Attend Meetings</h3>
+              <p>Monthly general meetings on the second Tuesday. Bring issues, hear updates, vote on matters affecting the neighborhood.</p>
+            </div>
+            <div class="grid-card">
+              <h3>Join a Committee</h3>
+              <p>Safety, beautification, parks, and advocacy. Committees do the real work — and they always need more hands.</p>
+            </div>
+            <div class="grid-card">
+              <h3>Volunteer</h3>
+              <p>Lake cleanups, tree plantings, community events. Seasonal opportunities to contribute a few hours to the neighborhood.</p>
+            </div>
           </div>
         </div>
       </div>
-      <p style="margin-top: 1.5rem;"><a href="/events" class="btn btn-primary">View All Events</a></p>
+    </div>
+  </section>
+
+  <!-- UPCOMING EVENTS -->
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Coming Up</span>
+        <div>
+          <h2 class="section-heading">Upcoming events &amp; meetings</h2>
+          <div class="event-list">
+            <div class="event-row">
+              <div class="event-date-block">
+                <div class="event-month">May</div>
+                <div class="event-day">13</div>
+              </div>
+              <div class="event-info">
+                <h3>Monthly Neighborhood Meeting</h3>
+                <p>7:00 PM · Loch Haven Park Pavilion · All residents welcome</p>
+              </div>
+            </div>
+            <div class="event-row">
+              <div class="event-date-block">
+                <div class="event-month">May</div>
+                <div class="event-day">24</div>
+              </div>
+              <div class="event-info">
+                <h3>Lake Cleanup Day</h3>
+                <p>9:00 AM · Lake Formosa Shoreline · Gloves and bags provided</p>
+              </div>
+            </div>
+            <div class="event-row">
+              <div class="event-date-block">
+                <div class="event-month">Jun</div>
+                <div class="event-day">10</div>
+              </div>
+              <div class="event-info">
+                <h3>Summer Block Party</h3>
+                <p>5:00 PM · Virginia Drive Park · Food, music, open to all residents</p>
+              </div>
+            </div>
+          </div>
+          <p style="margin-top: 1.5rem;">
+            <a href="/events" class="text-link">View full event calendar →</a>
+          </p>
+        </div>
+      </div>
     </div>
   </section>
 </BaseLayout>
@@ -101,29 +121,44 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
   const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/outdoors-v12',
-    center: [-81.3751, 28.5618], // Lake Formosa, Orlando
-    zoom: 14.5,
+    center: [-81.36974, 28.56835],
+    zoom: 14.8,
+    pitch: 30,
+    scrollZoom: false,
   });
 
   map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
-  // Marker on the lake
-  new mapboxgl.Marker({ color: '#1a3a5c' })
-    .setLngLat([-81.3751, 28.5618])
-    .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong>Lake Formosa</strong><br>Orlando, FL'))
+  const el = document.createElement('div');
+  el.style.cssText = `
+    width: 10px; height: 10px;
+    background: #4a5568; border: 2px solid white;
+    border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  `;
+
+  new mapboxgl.Marker(el)
+    .setLngLat([-81.36974, 28.56835])
+    .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong>Lake Formosa</strong>'))
     .addTo(map);
 
-  // TODO: add neighborhood boundary polygon here when you have the GeoJSON from
-  // City of Orlando GIS portal (https://data.cityoforlando.net).
+  if (window.innerWidth <= 768) {
+    map.dragPan.disable();
+    map.touchZoomRotate.disable();
+  }
+
+  // TODO: add neighborhood boundary — replace BOUNDARY_GEOJSON with data from
+  // City of Orlando GIS portal (data.cityoforlando.net), then uncomment:
   // map.on('load', () => {
   //   map.addSource('boundary', { type: 'geojson', data: BOUNDARY_GEOJSON });
   //   map.addLayer({ id: 'boundary-fill', type: 'fill', source: 'boundary',
-  //     paint: { 'fill-color': '#1a3a5c', 'fill-opacity': 0.12 } });
+  //     paint: { 'fill-color': '#4a5568', 'fill-opacity': 0.1 } });
   //   map.addLayer({ id: 'boundary-line', type: 'line', source: 'boundary',
-  //     paint: { 'line-color': '#1a3a5c', 'line-width': 2 } });
+  //     paint: { 'line-color': '#4a5568', 'line-width': 1.5 } });
   // });
-</script>
 
-<style>
-  #map { margin-top: 0; }
-</style>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>

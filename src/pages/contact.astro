@@ -3,104 +3,87 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Contact — Lake Formosa Neighborhood Association">
-  <div class="page-header">
-    <h1>Contact Us</h1>
-    <p>Reach the board, report an issue, or get involved.</p>
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Contact Us</h1>
+      <p>Reach the board, report a concern, or find out how to get involved.</p>
+    </div>
   </div>
 
-  <section class="section">
-    <div class="container">
-      <div class="contact-grid">
-        <!-- FORM -->
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Get in Touch</span>
         <div>
-          <h2 class="section-title">Send a Message</h2>
-          <hr class="divider" />
-          <form
-            name="contact"
-            method="POST"
-            data-netlify="true"
-            netlify-honeypot="bot-field"
-          >
-            <input type="hidden" name="form-name" value="contact" />
-            <p style="display:none;">
-              <label>Don't fill this out: <input name="bot-field" /></label>
-            </p>
+          <h2 class="section-heading">We'd love to hear from you</h2>
+          <div class="contact-grid">
+            <!-- FORM -->
+            <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+              <input type="hidden" name="form-name" value="contact" />
+              <p style="display:none;"><label>Skip: <input name="bot-field" /></label></p>
 
-            <div class="form-group">
-              <label for="name">Your Name</label>
-              <input type="text" id="name" name="name" required placeholder="Jane Smith" />
-            </div>
+              <div class="form-row">
+                <label for="name">Your Name</label>
+                <input type="text" id="name" name="name" required placeholder="Jane Smith" />
+              </div>
 
-            <div class="form-group">
-              <label for="email">Email Address</label>
-              <input type="email" id="email" name="email" required placeholder="jane@example.com" />
-            </div>
+              <div class="form-row">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="jane@example.com" />
+              </div>
 
-            <div class="form-group">
-              <label for="subject">Subject</label>
-              <select id="subject" name="subject">
-                <option value="general">General Question</option>
-                <option value="meeting">Meeting / Events</option>
-                <option value="concern">Neighborhood Concern</option>
-                <option value="board">Board / Membership</option>
-                <option value="media">Media Inquiry</option>
-              </select>
-            </div>
+              <div class="form-row">
+                <label for="subject">Topic</label>
+                <select id="subject" name="subject">
+                  <option value="general">General question</option>
+                  <option value="meeting">Meeting or events</option>
+                  <option value="concern">Neighborhood concern</option>
+                  <option value="board">Board or membership</option>
+                  <option value="volunteer">Volunteering</option>
+                  <option value="media">Media inquiry</option>
+                </select>
+              </div>
 
-            <div class="form-group">
-              <label for="message">Message</label>
-              <textarea id="message" name="message" required placeholder="How can we help?"></textarea>
-            </div>
+              <div class="form-row">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" required placeholder="How can we help?"></textarea>
+              </div>
 
-            <button type="submit" class="btn btn-primary">Send Message</button>
-          </form>
-        </div>
+              <button type="submit" class="form-submit">Send Message →</button>
+            </form>
 
-        <!-- INFO -->
-        <div>
-          <h2 class="section-title">Get in Touch</h2>
-          <hr class="divider" />
+            <!-- INFO -->
+            <div class="contact-info-list">
+              <div class="contact-info-item">
+                <div class="contact-info-label">Email</div>
+                <a href="mailto:info@lakeformosa.org">info@lakeformosa.org</a>
+              </div>
 
-          <div class="contact-item">
-            <span class="icon">📧</span>
-            <div>
-              <strong>Email</strong><br />
-              <a href="mailto:info@lakeformosa.org">info@lakeformosa.org</a>
-            </div>
-          </div>
+              <div class="contact-info-item">
+                <div class="contact-info-label">Meeting Location</div>
+                Loch Haven Park Pavilion<br />
+                2267 N Mills Ave<br />
+                Orlando, FL 32803
+              </div>
 
-          <div class="contact-item">
-            <span class="icon">📍</span>
-            <div>
-              <strong>Meeting Location</strong><br />
-              Loch Haven Park Pavilion<br />
-              2267 N Mills Ave<br />
-              Orlando, FL 32803
-            </div>
-          </div>
+              <div class="contact-info-item">
+                <div class="contact-info-label">Monthly Meetings</div>
+                Second Tuesday of each month<br />
+                7:00 PM · All residents welcome
+              </div>
 
-          <div class="contact-item">
-            <span class="icon">📅</span>
-            <div>
-              <strong>Monthly Meetings</strong><br />
-              Second Tuesday of each month<br />
-              7:00 PM
-            </div>
-          </div>
+              <div class="contact-info-item">
+                <div class="contact-info-label">Non-Emergency Police</div>
+                Orlando Police Dept<br />
+                <a href="tel:+14072462470">(407) 246-2470</a>
+              </div>
 
-          <div class="contact-item">
-            <span class="icon">🚨</span>
-            <div>
-              <strong>Non-Emergency Police</strong><br />
-              Orlando Police Dept: <a href="tel:+14072462470">(407) 246-2470</a>
-            </div>
-          </div>
-
-          <div class="contact-item">
-            <span class="icon">🏙️</span>
-            <div>
-              <strong>City of Orlando</strong><br />
-              <a href="https://www.orlando.gov/Resident-Services/City-311" target="_blank" rel="noopener">City 311 — Report an Issue</a>
+              <div class="contact-info-item">
+                <div class="contact-info-label">City of Orlando</div>
+                <a href="https://www.orlando.gov/Resident-Services/City-311" target="_blank" rel="noopener">
+                  City 311 — Report a neighborhood issue →
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -108,3 +91,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </section>
 </BaseLayout>
+
+<script is:inline>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>

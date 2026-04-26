@@ -3,108 +3,112 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="About — Lake Formosa Neighborhood Association">
-  <div class="page-header">
-    <h1>About Lake Formosa</h1>
-    <p>History, mission, and the people who make our neighborhood thrive.</p>
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>About the Association</h1>
+      <p>History, mission, boundaries, and the people who keep the neighborhood running.</p>
+    </div>
   </div>
 
   <!-- HISTORY -->
-  <section class="section">
-    <div class="container">
-      <h2 class="section-title">Our Neighborhood</h2>
-      <hr class="divider" />
-      <div style="max-width: 720px;">
-        <p style="margin-bottom: 1rem;">
-          Lake Formosa is one of Orlando's most distinctive urban neighborhoods, centered around the shimmering 70-acre lake that gives it its name. Surrounded by the Loch Haven Cultural Park — home to the Orlando Museum of Art, the Orlando Science Center, and the Orlando Repertory Theatre — the neighborhood blends natural beauty with rich civic life.
-        </p>
-        <p style="margin-bottom: 1rem;">
-          Established in the early 20th century, Lake Formosa features a mix of craftsman bungalows, mid-century homes, and contemporary infill housing. Tree-lined streets, proximity to Mills Avenue, and easy access to downtown make it one of central Florida's most walkable and sought-after addresses.
-        </p>
-        <p>
-          The Lake Formosa Neighborhood Association was formed to preserve the character of the neighborhood, advocate for residents at city hall, and foster the sense of community that makes this place special.
-        </p>
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Our History</span>
+        <div class="section-body">
+          <h2 class="section-heading">One of Orlando's most distinctive urban neighborhoods</h2>
+          <p>Lake Formosa is centered around the shimmering 70-acre lake that gives it its name, bordered by the Loch Haven Cultural Park — home to the Orlando Museum of Art, the Orlando Science Center, and the Orlando Repertory Theatre.</p>
+          <p>Established in the early 20th century, the neighborhood features craftsman bungalows, mid-century homes, and contemporary infill housing woven together by a tree canopy and walkable streets that remain rare in central Florida.</p>
+          <p>The Lake Formosa Neighborhood Association was formed to preserve that character, advocate for residents at city hall, and foster the kind of community that makes a neighborhood worth protecting.</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- MISSION -->
-  <section class="section section-alt">
-    <div class="container">
-      <h2 class="section-title">Our Mission</h2>
-      <hr class="divider" />
-      <div class="cards">
-        <div class="card">
-          <div class="card-icon">🏛️</div>
-          <h3>Advocacy</h3>
-          <p>Represent resident interests at City Hall, planning board meetings, and with city commissioners on issues that affect our neighborhood.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🤝</div>
-          <h3>Community</h3>
-          <p>Build meaningful connections through events, meetings, and shared projects that bring neighbors together year-round.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🌳</div>
-          <h3>Stewardship</h3>
-          <p>Protect and improve our green spaces, lake water quality, tree canopy, and the historic character of the built environment.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">📢</div>
-          <h3>Communication</h3>
-          <p>Keep residents informed about local news, city projects, safety concerns, and opportunities to get involved.</p>
+  <section>
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Our Mission</span>
+        <div>
+          <h2 class="section-heading">Advocacy, community, and stewardship</h2>
+          <div class="card-grid card-grid-2">
+            <div class="grid-card">
+              <h3>Advocacy</h3>
+              <p>Represent resident interests at City Hall, planning board meetings, and with city commissioners on zoning, development, and infrastructure issues that affect the neighborhood.</p>
+            </div>
+            <div class="grid-card">
+              <h3>Community</h3>
+              <p>Build meaningful connections through events, monthly meetings, and shared projects that bring neighbors together throughout the year.</p>
+            </div>
+            <div class="grid-card">
+              <h3>Stewardship</h3>
+              <p>Protect and improve our green spaces, lake water quality, tree canopy, and the historic character of the built environment around Lake Formosa.</p>
+            </div>
+            <div class="grid-card">
+              <h3>Communication</h3>
+              <p>Keep residents informed about local news, city projects, safety concerns, and opportunities to get involved in the neighborhood.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- BOARD -->
-  <section class="section">
-    <div class="container">
-      <h2 class="section-title">Board of Directors</h2>
-      <hr class="divider" />
-      <p class="section-lead">Elected by residents each year. Interested in serving? Reach out via our <a href="/contact">contact page</a>.</p>
-      <div class="board-grid">
-        <div class="board-card">
-          <div class="board-avatar">P</div>
-          <h3>President</h3>
-          <p><em>Position open for 2025</em></p>
-        </div>
-        <div class="board-card">
-          <div class="board-avatar">VP</div>
-          <h3>Vice President</h3>
-          <p><em>Position open for 2025</em></p>
-        </div>
-        <div class="board-card">
-          <div class="board-avatar">S</div>
-          <h3>Secretary</h3>
-          <p><em>Position open for 2025</em></p>
-        </div>
-        <div class="board-card">
-          <div class="board-avatar">T</div>
-          <h3>Treasurer</h3>
-          <p><em>Position open for 2025</em></p>
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Leadership</span>
+        <div>
+          <h2 class="section-heading">Board of Directors</h2>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7;">
+            Elected by residents annually at the December general meeting. Interested in serving?
+            <a href="/contact" style="color: var(--accent); text-decoration: underline; text-underline-offset: 2px;">Reach out to us.</a>
+          </p>
+          <div class="board-grid">
+            <div class="board-cell">
+              <div class="board-role">President</div>
+              <div class="board-name">Open — 2025</div>
+            </div>
+            <div class="board-cell">
+              <div class="board-role">Vice President</div>
+              <div class="board-name">Open — 2025</div>
+            </div>
+            <div class="board-cell">
+              <div class="board-role">Secretary</div>
+              <div class="board-name">Open — 2025</div>
+            </div>
+            <div class="board-cell">
+              <div class="board-role">Treasurer</div>
+              <div class="board-name">Open — 2025</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- BOUNDARIES -->
-  <section class="section section-alt">
-    <div class="container">
-      <h2 class="section-title">Neighborhood Boundaries</h2>
-      <hr class="divider" />
-      <div style="max-width: 600px; font-family: system-ui, sans-serif;">
-        <p style="margin-bottom: 0.75rem;">The Lake Formosa neighborhood is generally bounded by:</p>
-        <ul style="padding-left: 1.5rem; line-height: 2;">
-          <li><strong>North:</strong> Rollins Street</li>
-          <li><strong>South:</strong> Colonial Drive (US 50)</li>
-          <li><strong>East:</strong> Orange Avenue</li>
-          <li><strong>West:</strong> I-4</li>
-        </ul>
-        <p style="margin-top: 1rem; color: var(--muted); font-size: 0.9rem;">
-          Official boundaries are defined by the City of Orlando. See the <a href="/">neighborhood map</a> on our homepage.
-        </p>
+  <section>
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Boundaries</span>
+        <div class="section-body">
+          <h2 class="section-heading">Neighborhood boundaries</h2>
+          <p>The Lake Formosa neighborhood is generally bounded by Rollins Street to the north, Colonial Drive (US 50) to the south, Orange Avenue to the east, and I-4 to the west.</p>
+          <div class="info-box">
+            <strong>Official boundaries</strong> are defined by the City of Orlando. The interactive map on our <a href="/" style="color: var(--accent); text-decoration: underline; text-underline-offset: 2px;">homepage</a> shows the neighborhood in context. A precise boundary overlay from the City of Orlando GIS portal will be added soon.
+          </div>
+        </div>
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<script is:inline>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>

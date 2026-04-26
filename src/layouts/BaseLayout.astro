@@ -11,13 +11,6 @@ const {
   description = 'The official website of the Lake Formosa Neighborhood Association in Orlando, Florida.',
 } = Astro.props;
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/events', label: 'Events' },
-  { href: '/contact', label: 'Contact' },
-];
-
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
 
@@ -31,33 +24,62 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     <title>{title}</title>
   </head>
   <body>
-    <nav class="site-nav">
-      <div class="nav-inner">
-        <a href="/" class="nav-brand">
-          Lake Formosa NA
-        </a>
-        <ul class="nav-links">
-          {navLinks.map(link => (
-            <li>
-              <a
-                href={link.href}
-                class={currentPath === link.href ? 'active' : ''}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+    <nav>
+      <a href="/" class="site-name">Lake Formosa NA</a>
+      <div class="nav-links">
+        <a href="/about" class={`nav-text-link${currentPath === '/about' ? ' active' : ''}`}>About</a>
+        <a href="/events" class={`nav-text-link${currentPath === '/events' ? ' active' : ''}`}>Events</a>
+        <a href="/contact" class="nav-cta">Contact Us</a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </nav>
 
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+      <a href="/about">About</a>
+      <a href="/events">Events</a>
+      <a href="/contact">Contact Us</a>
+    </div>
+
     <slot />
 
-    <footer class="site-footer">
-      <p>
-        &copy; {new Date().getFullYear()} Lake Formosa Neighborhood Association &mdash; Orlando, FL |
-        <a href="mailto:info@lakeformosa.org">info@lakeformosa.org</a>
-      </p>
+    <footer>
+      <span>© {new Date().getFullYear()} Lake Formosa Neighborhood Association</span>
+      <span><a href="/contact">Get in touch</a> · Orlando, Florida</span>
     </footer>
+
+    <script is:inline>
+      const hamburger = document.getElementById('hamburger');
+      const mobileMenu = document.getElementById('mobile-menu');
+
+      if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = mobileMenu.classList.toggle('open');
+          hamburger.classList.toggle('open', isOpen);
+          hamburger.setAttribute('aria-expanded', String(isOpen));
+          mobileMenu.setAttribute('aria-hidden', String(!isOpen));
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+            mobileMenu.classList.remove('open');
+            hamburger.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+          }
+        });
+
+        mobileMenu.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            mobileMenu.classList.remove('open');
+            hamburger.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+          });
+        });
+      }
+    </script>
   </body>
 </html>
