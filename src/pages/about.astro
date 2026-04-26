@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SignupStrip from '../components/SignupStrip.astro';
 
 const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
 ---
@@ -47,6 +48,72 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
       </div>
     </div>
   </section>
+
+  <!-- GET INVOLVED -->
+  <section class="surface" id="get-involved">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Get Involved</span>
+        <div>
+          <h2 class="section-heading">Live in Lake Formosa? We want to hear from you.</h2>
+          <p class="get-involved-intro">Whether you want to attend a meeting, volunteer for an event, join a committee, or eventually serve on the board — fill out this form and someone will be in touch. The more neighbors who participate, the stronger the association.</p>
+
+          <form
+            class="get-involved-form"
+            name="get-involved"
+            method="POST"
+            data-netlify="true"
+            netlify-honeypot="bot-field"
+            id="get-involved-form"
+            novalidate
+          >
+            <input type="hidden" name="form-name" value="get-involved" />
+            <p style="display:none;"><label>Skip: <input name="bot-field" /></label></p>
+
+            <div class="gi-row-2">
+              <div class="gi-field">
+                <label for="gi-first">First Name</label>
+                <input type="text" id="gi-first" name="first_name" autocomplete="given-name" required />
+              </div>
+              <div class="gi-field">
+                <label for="gi-last">Last Name</label>
+                <input type="text" id="gi-last" name="last_name" autocomplete="family-name" required />
+              </div>
+            </div>
+
+            <div class="gi-field">
+              <label for="gi-email">Email Address</label>
+              <input type="email" id="gi-email" name="email" autocomplete="email" required />
+            </div>
+
+            <div class="gi-field">
+              <label for="gi-address">Street Address <span class="gi-hint">(to confirm you live in the neighborhood)</span></label>
+              <input type="text" id="gi-address" name="address" autocomplete="street-address" />
+            </div>
+
+            <div class="gi-field">
+              <label>I am interested in</label>
+              <div class="gi-checkboxes">
+                <label class="gi-check"><input type="checkbox" name="interests" value="Attending monthly meetings" /> Attending monthly meetings</label>
+                <label class="gi-check"><input type="checkbox" name="interests" value="Volunteering for events" /> Volunteering for events</label>
+                <label class="gi-check"><input type="checkbox" name="interests" value="Joining a committee" /> Joining a committee</label>
+                <label class="gi-check"><input type="checkbox" name="interests" value="Serving on the board" /> Serving on the board</label>
+                <label class="gi-check"><input type="checkbox" name="interests" value="Just staying informed" /> Just staying informed</label>
+              </div>
+            </div>
+
+            <span class="field-error" id="gi-error"></span>
+            <button type="submit" class="gi-submit" id="gi-btn">Submit →</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SignupStrip
+    heading="Just want event reminders?"
+    subtext="Sign up for email updates and we'll keep you posted on meetings and community events."
+  />
 </BaseLayout>
 
 <!-- Mapbox -->
@@ -97,9 +164,136 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
     { threshold: 0.15 }
   );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Get Involved form
+  const giForm  = document.getElementById('get-involved-form');
+  const giBtn   = document.getElementById('gi-btn');
+  const giError = document.getElementById('gi-error');
+
+  if (giForm) {
+    giForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      giError.textContent = '';
+
+      const first = giForm.querySelector('#gi-first').value.trim();
+      const email = giForm.querySelector('#gi-email').value.trim();
+
+      if (!first || !email) {
+        giError.textContent = 'Please fill in your name and email address.';
+        return;
+      }
+
+      giBtn.textContent = 'Submitting...'; giBtn.disabled = true;
+
+      try {
+        const res = await fetch('/', { method: 'POST', body: new FormData(giForm) });
+        if (res.ok) {
+          giBtn.textContent = 'Submitted ✓'; giBtn.style.opacity = '0.6';
+          giForm.querySelectorAll('input[type="text"], input[type="email"]').forEach(i => i.value = '');
+          giForm.querySelectorAll('input[type="checkbox"]').forEach(i => i.checked = false);
+        } else { throw new Error(); }
+      } catch {
+        giError.textContent = 'Something went wrong. Please try again.';
+        giBtn.textContent = 'Submit →'; giBtn.disabled = false;
+      }
+    });
+  }
 </script>
 
 <style>
+  /* ── GET INVOLVED FORM ── */
+  .get-involved-intro {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin-bottom: 2rem;
+  }
+
+  .get-involved-form { display: flex; flex-direction: column; gap: 1rem; }
+
+  .gi-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .gi-field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .gi-field label {
+    font-size: 0.72rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  .gi-hint { text-transform: none; letter-spacing: 0; font-size: 0.68rem; color: var(--text-secondary); opacity: 0.75; }
+
+  .gi-field input {
+    width: 100%;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.7rem 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .gi-field input:focus { border-color: var(--accent); }
+
+  .gi-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+  }
+
+  .gi-check {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 300;
+  }
+
+  .gi-check input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .gi-submit {
+    align-self: flex-start;
+    background: var(--text-primary);
+    color: var(--bg);
+    border: none;
+    padding: 0.8rem 1.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 0.5rem;
+  }
+
+  .gi-submit:hover { opacity: 0.8; }
+
+  @media (max-width: 540px) {
+    .gi-row-2 { grid-template-columns: 1fr; }
+  }
+
+  /* ── MAP ── */
   .map-container {
     margin-top: 3rem;
     border: 1px solid var(--border);

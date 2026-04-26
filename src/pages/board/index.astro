@@ -22,6 +22,19 @@ function initials(name: string) {
     </div>
   </div>
 
+  <!-- GET INVOLVED CTA -->
+  <section>
+    <div class="section-inner">
+      <div class="cta-bar fade-in">
+        <div>
+          <div class="cta-label">Live in the neighborhood?</div>
+          <div class="cta-heading">Get involved with the association</div>
+        </div>
+        <a href="/about#get-involved" class="cta-btn">Tell us you're interested →</a>
+      </div>
+    </div>
+  </section>
+
   <!-- OFFICERS -->
   <section class="surface">
     <div class="section-inner">
@@ -91,6 +104,45 @@ function initials(name: string) {
     color: var(--text-secondary);
     margin-bottom: 1.75rem;
   }
+
+  /* ── CTA BAR ── */
+  .cta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 2rem 2.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .cta-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .cta-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+  .cta-btn {
+    background: var(--accent);
+    color: #fff;
+    padding: 0.7rem 1.4rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .cta-btn:hover { opacity: 0.85; text-decoration: none; }
 
   /* ── OFFICER CARDS ── */
   .officer-grid {

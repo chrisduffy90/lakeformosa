@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import SignupStrip from '../components/SignupStrip.astro';
 
 const allEvents = await getCollection('events');
 
@@ -62,6 +63,11 @@ const events = allEvents
       </div>
     </div>
   </section>
+
+  <SignupStrip
+    heading="Never miss an event"
+    subtext="Sign up and we'll send you reminders before every meeting, cleanup, and community gathering."
+  />
 </BaseLayout>
 
 <script is:inline>

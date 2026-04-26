@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SignupStrip from '../components/SignupStrip.astro';
 ---
 
 <BaseLayout>
@@ -78,24 +79,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </section>
 
-  <!-- EMAIL SIGNUP -->
-  <section id="signup">
-    <div class="signup-inner">
-      <div class="signup-text fade-in">
-        <h2>Stay in the loop</h2>
-        <p>Get neighborhood news, meeting reminders, and event announcements delivered to your inbox.</p>
-      </div>
-      <form class="signup-form fade-in" id="signup-form" novalidate>
-        <input type="text" placeholder="First name" id="signup-firstname" />
-        <input type="text" placeholder="Last name" id="signup-lastname" />
-        <span class="field-error" id="name-error"></span>
-        <input type="email" placeholder="Email address" id="signup-email" required />
-        <span class="field-error" id="email-error"></span>
-        <button type="submit">Stay Updated →</button>
-        <span class="field-error" id="form-error"></span>
-      </form>
-    </div>
-  </section>
+  <!-- SIGNUP -->
+  <SignupStrip
+    heading="Stay in the loop"
+    subtext="Get event reminders and neighborhood news delivered to your inbox."
+  />
 </BaseLayout>
 
 <style>
@@ -148,40 +136,4 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     { threshold: 0.15 }
   );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-  // Signup form
-  const firstNameInput = document.getElementById('signup-firstname');
-  const lastNameInput  = document.getElementById('signup-lastname');
-  const emailInput     = document.getElementById('signup-email');
-  const nameError      = document.getElementById('name-error');
-  const emailError     = document.getElementById('email-error');
-  const formError      = document.getElementById('form-error');
-
-  function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
-
-  firstNameInput.addEventListener('input', () => { nameError.textContent = ''; });
-  lastNameInput.addEventListener('input',  () => { nameError.textContent = ''; });
-  emailInput.addEventListener('input',     () => { emailError.textContent = ''; });
-
-  document.getElementById('signup-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    nameError.textContent = ''; emailError.textContent = ''; formError.textContent = '';
-
-    const first_name = firstNameInput.value.trim();
-    const email      = emailInput.value;
-    let valid = true;
-
-    if (!first_name) { nameError.textContent = 'Please enter your first name'; valid = false; }
-    if (!isValidEmail(email)) { emailError.textContent = 'Please enter a valid email address'; valid = false; }
-    if (!valid) return;
-
-    const btn = e.target.querySelector('button');
-    btn.textContent = 'Submitting...'; btn.disabled = true;
-
-    // TODO: wire to backend endpoint
-    setTimeout(() => {
-      btn.textContent = "You're on the list ✓";
-      btn.style.opacity = '0.6';
-    }, 800);
-  });
 </script>
