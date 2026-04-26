@@ -1,115 +1,164 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-
-const groups = [
-  {
-    label: 'Neighborhood & Environment',
-    items: [
-      {
-        title: 'Loch Haven Lakes',
-        desc: 'Monitor water quality, report litter and wildlife distress, and track environmental health across the Loch Haven lake chain.',
-        url: 'https://lochhavenlakes.com',
-      },
-      {
-        title: 'City of Orlando Neighborhood Relations',
-        desc: 'Connect with your city neighborhood district liaison, find meeting minutes, and access neighborhood planning resources.',
-        url: 'https://www.orlando.gov/Our-Government/Departments-Offices/Community-Development-Department/Neighborhood-Relations',
-      },
-      {
-        title: 'City 311 — Report a Problem',
-        desc: 'Report potholes, broken streetlights, overgrown rights-of-way, illegal dumping, or any other city service issue online.',
-        url: 'https://www.orlando.gov/Resident-Services/City-311',
-      },
-      {
-        title: 'Loch Haven Cultural Park',
-        desc: 'Official site for the Orlando Museum of Art, Orlando Science Center, Orlando Repertory Theatre, and other park events.',
-        url: 'https://www.lochhaven.org',
-      },
-    ],
-  },
-  {
-    label: 'Public Safety',
-    items: [
-      {
-        title: 'Orlando Police Department',
-        desc: 'Non-emergency line: (407) 246-2470. Find crime maps, download reports, and access neighborhood watch resources.',
-        url: 'https://www.orlando.gov/Our-Government/Departments-Offices/Orlando-Police-Department',
-      },
-      {
-        title: 'Nextdoor — Lake Formosa',
-        desc: 'Connect with neighbors on Nextdoor for real-time safety alerts, lost pets, local recommendations, and more.',
-        url: 'https://nextdoor.com',
-      },
-    ],
-  },
-  {
-    label: 'City & Government',
-    items: [
-      {
-        title: 'City of Orlando GIS / Open Data',
-        desc: 'Access neighborhood boundary files, zoning maps, infrastructure data, and other GIS datasets from the city.',
-        url: 'https://data.cityoforlando.net',
-      },
-      {
-        title: 'Orange County Property Appraiser',
-        desc: 'Look up property records, assessed values, owner history, and tax information for any property in Orange County.',
-        url: 'https://www.ocpafl.org',
-      },
-      {
-        title: 'City of Orlando Zoning & Development',
-        desc: 'Track active permits, zoning applications, and development projects that may affect the neighborhood.',
-        url: 'https://www.orlando.gov/Our-Government/Departments-Offices/Economic-Development/Building-and-Permitting',
-      },
-    ],
-  },
-  {
-    label: 'Environment & Recreation',
-    items: [
-      {
-        title: 'Florida Department of Environmental Protection',
-        desc: 'Report water quality concerns, access lake monitoring data, and find information about Florida\'s waterways.',
-        url: 'https://floridadep.gov',
-      },
-      {
-        title: 'Orlando Parks & Recreation',
-        desc: 'Find hours, programs, and maintenance contacts for Loch Haven Park and other Orlando parks near the neighborhood.',
-        url: 'https://www.orlando.gov/Parks-the-Environment/Parks-Recreation',
-      },
-    ],
-  },
-];
 ---
 
 <BaseLayout title="Resources — Lake Formosa Neighborhood Association">
   <div class="page-hero">
     <div class="page-hero-inner">
       <h1>Resources</h1>
-      <p>Useful links for Lake Formosa residents — city services, safety, environment, and neighbors.</p>
+      <p>Useful links for Lake Formosa residents — community groups, city services, safety, and environmental data.</p>
     </div>
   </div>
 
-  {groups.map((group, i) => (
-    <section class={i % 2 === 0 ? 'surface' : ''}>
-      <div class="section-inner">
-        <div class="section-grid fade-in">
-          <span class="section-label">{group.label}</span>
-          <div>
-            <div class="resource-list">
-              {group.items.map(item => (
-                <a href={item.url} target="_blank" rel="noopener noreferrer" class="resource-row">
-                  <div class="resource-row-info">
-                    <h3>{item.title}</h3>
-                    <p>{item.desc}</p>
-                  </div>
-                  <span class="resource-arrow">↗</span>
-                </a>
-              ))}
-            </div>
+  <!-- COMMUNITY -->
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Community</span>
+        <div>
+          <div class="resource-list">
+            <a href="https://www.flhcl.org" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Friends of Loch Haven Chain of Lakes</h3>
+                <p>A non-profit organization of neighbors dedicated to hands-on stewardship of the Loch Haven lake chain — water quality, shoreline restoration, and community education.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://lochhavenlakes.com" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Loch Haven Lakes</h3>
+                <p>Monitor water quality, report litter and wildlife distress, and track environmental health across the Loch Haven lake chain including Lake Formosa.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://nextdoor.com" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Nextdoor — Lake Formosa</h3>
+                <p>Connect with neighbors for real-time safety alerts, lost pets, local recommendations, and day-to-day community conversation.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://www.lochhaven.org" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Loch Haven Cultural Park</h3>
+                <p>Events, hours, and information for the Orlando Museum of Art, Orlando Science Center, Orlando Repertory Theatre, and other park programming.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
           </div>
         </div>
       </div>
-    </section>
-  ))}
+    </div>
+  </section>
+
+  <!-- WATER & ENVIRONMENT -->
+  <section>
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Water &amp; Environment</span>
+        <div>
+          <div class="resource-list">
+            <a href="https://orange.wateratlas.usf.edu/waterbodies/lakes/140202/lake-formosa" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Water Atlas — Lake Formosa</h3>
+                <p>Real-time and historical water quality data for Lake Formosa, maintained by the University of South Florida Water Institute.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://www.orlando.gov/Report-a-Problem/Report-a-Solid-Waste-and-Environment-Problem/Report-Lake-or-Stormwater-Pollution" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Report Lake or Stormwater Pollution</h3>
+                <p>The City of Orlando's official channel for reporting pollution, illegal dumping, and stormwater issues to the relevant department.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://floridadep.gov" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Florida Dept. of Environmental Protection</h3>
+                <p>Report water quality concerns, access statewide lake monitoring data, and find Florida waterway protection resources.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://www.orlando.gov/Our-Government/Departments-Offices/Public-Works/Streets-and-Stormwater-Division/Keep-Orlando-Beautiful/Become-a-Volunteer-for-Keep-Orlando-Beautiful" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Keep Orlando Beautiful</h3>
+                <p>Volunteer for lake and waterway cleanups through the City of Orlando's official beautification program.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CITY & GOVERNMENT -->
+  <section class="surface">
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">City &amp; Government</span>
+        <div>
+          <div class="resource-list">
+            <a href="https://www.orlando.gov/Resident-Services/City-311" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>City 311 — Report a Problem</h3>
+                <p>Report potholes, broken streetlights, overgrown rights-of-way, illegal dumping, or any other city service issue.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://www.orlando.gov/Our-Government/Departments-Offices/Community-Development-Department/Neighborhood-Relations" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>City of Orlando Neighborhood Relations</h3>
+                <p>Connect with your city neighborhood district liaison and access neighborhood planning resources.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://data.cityoforlando.net" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>City of Orlando Open Data / GIS</h3>
+                <p>Access zoning maps, infrastructure data, and other GIS datasets from the city.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://www.ocpafl.org" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Orange County Property Appraiser</h3>
+                <p>Look up property records, assessed values, owner history, and tax information for any parcel in Orange County.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PUBLIC SAFETY -->
+  <section>
+    <div class="section-inner">
+      <div class="section-grid fade-in">
+        <span class="section-label">Public Safety</span>
+        <div>
+          <div class="resource-list">
+            <a href="https://www.orlando.gov/Our-Government/Departments-Offices/Orlando-Police-Department" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Orlando Police Department</h3>
+                <p>Non-emergency line: (407) 246-2470. Crime maps, report downloads, and neighborhood watch resources.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+            <a href="https://www.orlando.gov/Parks-the-Environment/Parks-Recreation" target="_blank" rel="noopener noreferrer" class="resource-row">
+              <div class="resource-row-info">
+                <h3>Orlando Parks &amp; Recreation</h3>
+                <p>Hours, programs, and maintenance contacts for Loch Haven Park and other city parks near the neighborhood.</p>
+              </div>
+              <span class="resource-arrow">↗</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
 <script is:inline>

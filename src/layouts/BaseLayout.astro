@@ -32,6 +32,8 @@ const nav = [
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
+    <!-- Netlify Identity — required so email confirmation links redirect back to /admin -->
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
   <body>
     <nav>
@@ -61,6 +63,15 @@ const nav = [
     </footer>
 
     <script is:inline>
+      // Redirect Netlify Identity confirmations to /admin
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.on('init', user => {
+          if (!user) {
+            window.netlifyIdentity.on('login', () => { document.location.href = '/admin/'; });
+          }
+        });
+      }
+
       const hamburger = document.getElementById('hamburger');
       const mobileMenu = document.getElementById('mobile-menu');
       if (hamburger && mobileMenu) {

@@ -1,43 +1,16 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
 
-const events = [
-  {
-    month: 'May', day: '13', title: 'Monthly Neighborhood Meeting',
-    meta: '7:00 PM · Loch Haven Park Pavilion',
-    desc: 'Regular monthly meeting. Agenda includes city planning updates, the lakefront beautification project, board announcements, and open forum. All residents welcome.',
-  },
-  {
-    month: 'May', day: '24', title: 'Lake Cleanup Day',
-    meta: '9:00 AM – Noon · Lake Formosa Shoreline',
-    desc: 'Spring cleanup around the lake — invasive plant removal, litter collection, and native plantings along the shoreline. Gloves and bags provided; just bring water and sunscreen.',
-  },
-  {
-    month: 'Jun', day: '10', title: 'Summer Block Party',
-    meta: '5:00 PM – 9:00 PM · Virginia Drive Park',
-    desc: 'Annual summer block party with food trucks, live music, and lawn games. Free and open to all Lake Formosa residents and their guests.',
-  },
-  {
-    month: 'Jun', day: '17', title: 'Monthly Neighborhood Meeting',
-    meta: '7:00 PM · Loch Haven Park Pavilion',
-    desc: 'June meeting — summer safety updates, Parks & Recreation news, block party recap, and open forum.',
-  },
-  {
-    month: 'Jul', day: '4', title: 'Independence Day at the Lake',
-    meta: '6:00 PM · Lake Formosa Shoreline',
-    desc: 'Watch the fireworks from the lake. Community potluck — bring a dish to share. Blankets and chairs encouraged. No glass containers please.',
-  },
-  {
-    month: 'Jul', day: '15', title: 'Monthly Neighborhood Meeting',
-    meta: '7:00 PM · Loch Haven Park Pavilion',
-    desc: 'Regular July meeting. Summer updates, neighborhood watch report, open forum.',
-  },
-  {
-    month: 'Aug', day: '12', title: 'Monthly Neighborhood Meeting',
-    meta: '7:00 PM · Loch Haven Park Pavilion',
-    desc: 'August meeting — back-to-school neighborhood watch reminder, fall event planning, city updates.',
-  },
-];
+const allEvents = await getCollection('events');
+
+const events = allEvents
+  .sort((a, b) => a.data.date.localeCompare(b.data.date))
+  .map(e => ({
+    ...e.data,
+    month: new Date(e.data.date + 'T00:00:00').toLocaleString('en-US', { month: 'short' }),
+    day:   new Date(e.data.date + 'T00:00:00').toLocaleString('en-US', { day: 'numeric' }),
+  }));
 ---
 
 <BaseLayout title="Events — Lake Formosa Neighborhood Association">
@@ -63,8 +36,8 @@ const events = [
                 </div>
                 <div class="event-info">
                   <h3>{event.title}</h3>
-                  <p class="event-meta">{event.meta}</p>
-                  <p class="event-desc">{event.desc}</p>
+                  <p class="event-meta">{event.time} · {event.location}</p>
+                  <p class="event-desc">{event.description}</p>
                 </div>
               </div>
             ))}
@@ -81,9 +54,9 @@ const events = [
         <div class="section-body">
           <h2 class="section-heading">Regular meetings</h2>
           <p><strong style="font-weight: 500; color: var(--text-primary);">General meetings</strong> are held the second Tuesday of every month at 7:00 PM at the Loch Haven Park Pavilion, 2267 N Mills Ave, Orlando FL 32803. No membership required to attend.</p>
-          <p><strong style="font-weight: 500; color: var(--text-primary);">Board meetings</strong> are held the first Monday of each quarter. Open to residents who'd like to observe or add an agenda item — contact us at least five days in advance.</p>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">Board meetings</strong> are held the first Monday of each quarter, open to residents. Contact us at least five days in advance to add an agenda item.</p>
           <div class="info-box">
-            <strong>Have an event to add?</strong> If you're organizing a neighborhood activity or community initiative, <a href="/contact">send us the details</a> and we'll list it here.
+            <strong>Have an event to add?</strong> If you're organizing a neighborhood activity, <a href="/contact">send us the details</a> and we'll list it here.
           </div>
         </div>
       </div>

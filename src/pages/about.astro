@@ -8,30 +8,26 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
   <div class="page-hero">
     <div class="page-hero-inner">
       <h1>Our Neighborhood</h1>
-      <p>The history, character, and boundaries of Lake Formosa.</p>
+      <p>The history, character, and community of Lake Formosa.</p>
     </div>
   </div>
 
-  <!-- HISTORY + MAP -->
+  <!-- HISTORY -->
   <section class="surface">
     <div class="section-inner">
       <div class="section-grid fade-in">
         <span class="section-label">History</span>
-        <div>
-          <div class="section-body">
-            <h2 class="section-heading">A neighborhood shaped by its lake</h2>
-            <p>Lake Formosa is one of Orlando's most distinctive urban neighborhoods, centered around the shimmering 70-acre lake that gives it its name. Bordered by the Loch Haven Cultural Park — home to the Orlando Museum of Art, the Orlando Science Center, and the Orlando Repertory Theatre — the neighborhood blends natural beauty with a rich civic life that has been building since the early 20th century.</p>
-            <p>The area features craftsman bungalows, mid-century modern homes, and newer infill housing woven together by a mature tree canopy and streets that remain genuinely walkable. Proximity to Mills Avenue, the cultural park, and downtown Orlando make it one of central Florida's most sought-after addresses.</p>
-            <p>The Lake Formosa Neighborhood Association was founded to preserve that character — advocating at city hall on zoning and development decisions, organizing the community around shared concerns, and protecting the lake and green spaces that define the neighborhood's identity.</p>
-          </div>
-
-          <!-- MAP -->
-          <div class="map-container">
-            <div id="map"></div>
-          </div>
-
-          <p class="map-caption">Lake Formosa and the surrounding neighborhood in Orlando, FL. Boundary overlay coming once official GeoJSON is available from the City of Orlando GIS portal.</p>
+        <div class="section-body">
+          <h2 class="section-heading">A neighborhood shaped by its lake</h2>
+          <p>Lake Formosa is one of Orlando's most distinctive urban neighborhoods, centered around the shimmering 70-acre lake that gives it its name. Bordered by the Loch Haven Cultural Park — home to the Orlando Museum of Art, the Orlando Science Center, and the Orlando Repertory Theatre — the neighborhood blends natural beauty with a rich civic life that has been building since the early 20th century.</p>
+          <p>The area features craftsman bungalows, mid-century modern homes, and newer infill housing woven together by a mature tree canopy and streets that remain genuinely walkable. Proximity to Mills Avenue, the cultural park, and downtown Orlando make it one of central Florida's most sought-after addresses.</p>
+          <p>The Lake Formosa Neighborhood Association was founded to preserve that character — advocating at city hall on zoning and development decisions, organizing the community around shared concerns, and protecting the lake and green spaces that define the neighborhood's identity.</p>
         </div>
+      </div>
+
+      <!-- MAP: full container width below the text grid -->
+      <div class="map-container fade-in">
+        <div id="map"></div>
       </div>
     </div>
   </section>
@@ -47,22 +43,6 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
           <p><strong style="font-weight: 500; color: var(--text-primary);">Community.</strong> Monthly meetings, volunteer events, block parties — we build the kind of connections that make a neighborhood more than a collection of houses.</p>
           <p><strong style="font-weight: 500; color: var(--text-primary);">Stewardship.</strong> We work to protect the lake's water quality, the neighborhood's tree canopy, and the historic character of the built environment.</p>
           <p><strong style="font-weight: 500; color: var(--text-primary);">Communication.</strong> We keep residents informed and make it easy to get involved — whether that's attending a meeting, joining a committee, or just signing up for updates.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- BOUNDARIES -->
-  <section class="surface">
-    <div class="section-inner">
-      <div class="section-grid fade-in">
-        <span class="section-label">Boundaries</span>
-        <div class="section-body">
-          <h2 class="section-heading">Where is Lake Formosa?</h2>
-          <p>The neighborhood is generally bounded by Rollins Street to the north, Colonial Drive (US 50) to the south, Orange Avenue to the east, and I-4 to the west.</p>
-          <div class="info-box">
-            <strong>Official boundaries</strong> are defined and maintained by the City of Orlando. For precise GIS boundary data, visit the <a href="https://data.cityoforlando.net" target="_blank" rel="noopener">City of Orlando Open Data portal</a>.
-          </div>
         </div>
       </div>
     </div>
@@ -91,15 +71,14 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
   el.style.cssText = `
     width: 10px; height: 10px;
     background: #3d5a4f; border: 2px solid white;
-    border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    cursor: pointer;
+    border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer;
   `;
   new mapboxgl.Marker(el)
     .setLngLat([-81.36974, 28.56835])
     .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<strong>Lake Formosa</strong><br>Orlando, FL'))
     .addTo(map);
 
-  // TODO: swap BOUNDARY_GEOJSON with data from City of Orlando GIS portal
+  // TODO: add neighborhood overlay once GeoJSON is available from City of Orlando GIS
   // map.on('load', () => {
   //   map.addSource('boundary', { type: 'geojson', data: BOUNDARY_GEOJSON });
   //   map.addLayer({ id: 'boundary-fill', type: 'fill', source: 'boundary',
@@ -122,16 +101,9 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
 
 <style>
   .map-container {
-    margin-top: 2rem;
+    margin-top: 3rem;
     border: 1px solid var(--border);
     overflow: hidden;
   }
-  #map { width: 100%; height: 400px; }
-  .map-caption {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin-top: 0.6rem;
-    font-style: italic;
-  }
+  #map { width: 100%; height: 440px; }
 </style>

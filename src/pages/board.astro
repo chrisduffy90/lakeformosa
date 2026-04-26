@@ -1,50 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
 
-const board = [
-  {
-    role: 'President',
-    name: 'Open Position',
-    initials: 'P',
-    bio: 'The president chairs monthly meetings, represents the association at city hearings, and coordinates with the board on neighborhood priorities. Contact us if you are interested in this role.',
-    email: '',
-  },
-  {
-    role: 'Vice President',
-    name: 'Open Position',
-    initials: 'VP',
-    bio: 'The vice president supports the president, leads committee oversight, and steps in when the president is unavailable. Runs the beautification and parks committees.',
-    email: '',
-  },
-  {
-    role: 'Secretary',
-    name: 'Open Position',
-    initials: 'S',
-    bio: 'The secretary keeps meeting minutes, manages correspondence, maintains the membership roster, and sends out communications to residents.',
-    email: '',
-  },
-  {
-    role: 'Treasurer',
-    name: 'Open Position',
-    initials: 'T',
-    bio: 'The treasurer manages dues collection, maintains financial records, reports the budget at each meeting, and files any required annual reports with the city.',
-    email: '',
-  },
-  {
-    role: 'Member at Large',
-    name: 'Open Position',
-    initials: 'M',
-    bio: 'Board members at large represent the general interests of residents, serve on committees, assist with events, and help ensure a quorum at board meetings.',
-    email: '',
-  },
-  {
-    role: 'Member at Large',
-    name: 'Open Position',
-    initials: 'M',
-    bio: 'Board members at large represent the general interests of residents, serve on committees, assist with events, and help ensure a quorum at board meetings.',
-    email: '',
-  },
-];
+const allMembers = await getCollection('board');
+const members = allMembers.sort((a, b) => a.data.order - b.data.order).map(m => m.data);
+
+function initials(name: string) {
+  if (name === 'Open Position') return '?';
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
 ---
 
 <BaseLayout title="Board — Lake Formosa Neighborhood Association">
@@ -60,15 +24,17 @@ const board = [
       <div class="section-grid fade-in">
         <span class="section-label">2025 Board</span>
         <div>
-          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.5rem;">
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.5rem;">
             Board positions are currently open. If you live in the Lake Formosa neighborhood and are interested in serving, please <a href="/contact" style="color: var(--accent); text-decoration: underline; text-underline-offset: 2px;">reach out to us</a>.
           </p>
           <div class="board-grid">
-            {board.map(member => (
+            {members.map(member => (
               <div class="board-card">
                 <div class="board-avatar">
-                  {/* Replace src with Cloudinary URL when headshots are ready */}
-                  {member.initials}
+                  {member.headshot
+                    ? <img src={member.headshot} alt={member.name} />
+                    : initials(member.name)
+                  }
                 </div>
                 <div class="board-role">{member.role}</div>
                 <div class="board-name">{member.name}</div>
@@ -76,7 +42,7 @@ const board = [
                 {member.email && (
                   <a
                     href={`mailto:${member.email}`}
-                    style="font-size: 0.78rem; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; margin-top: 0.5rem; display: inline-block;"
+                    style="font-size: 0.78rem; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; margin-top: 0.6rem; display: inline-block;"
                   >{member.email}</a>
                 )}
               </div>
@@ -93,10 +59,10 @@ const board = [
         <span class="section-label">Elections</span>
         <div class="section-body">
           <h2 class="section-heading">How board elections work</h2>
-          <p>Elections are held at the December general meeting each year. Any resident who lives within the Lake Formosa neighborhood boundaries is eligible to run for a board seat. Nominations open in November and are announced via email and at the November meeting.</p>
+          <p>Elections are held at the December general meeting each year. Any resident who lives within the Lake Formosa neighborhood is eligible to run for a board seat. Nominations open in November and are announced via email and at the November meeting.</p>
           <p>Voting is open to all dues-paying members present at the December meeting. Board terms run January through December of the following year.</p>
           <div class="info-box">
-            <strong>Interested in running?</strong> You don't need any prior experience — just a willingness to show up, represent your neighbors, and contribute a few hours each month. <a href="/contact">Send us a note</a> and we'll fill you in.
+            <strong>Interested in running?</strong> You don't need prior experience — just a willingness to show up, represent your neighbors, and contribute a few hours each month. <a href="/contact">Send us a note</a> and we'll fill you in.
           </div>
         </div>
       </div>

@@ -1,0 +1,89 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: public/uploads
+public_folder: /uploads
+
+collections:
+  - name: events
+    label: Events
+    label_singular: Event
+    folder: src/content/events
+    create: true
+    delete: true
+    extension: json
+    format: json
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    identifier_field: title
+    summary: "{{title}} — {{date}}"
+    sortable_fields: ["date", "title"]
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: "e.g. Monthly Neighborhood Meeting"
+      - label: Date
+        name: date
+        widget: datetime
+        format: "YYYY-MM-DD"
+        date_format: "MMMM D, YYYY"
+        time_format: false
+      - label: Time
+        name: time
+        widget: string
+        hint: "e.g. 7:00 PM or 9:00 AM – Noon"
+      - label: Location
+        name: location
+        widget: string
+        hint: "e.g. Loch Haven Park Pavilion"
+      - label: Description
+        name: description
+        widget: text
+
+  - name: board
+    label: Board Members
+    label_singular: Board Member
+    folder: src/content/board
+    create: true
+    delete: true
+    extension: json
+    format: json
+    slug: "{{order}}-{{slug}}"
+    identifier_field: name
+    summary: "{{role}} — {{name}}"
+    sortable_fields: ["order", "role", "name"]
+    fields:
+      - label: Name
+        name: name
+        widget: string
+        hint: "Full name, or 'Open Position' if unfilled"
+      - label: Role
+        name: role
+        widget: select
+        options:
+          - President
+          - Vice President
+          - Secretary
+          - Treasurer
+          - Member at Large
+      - label: Display Order
+        name: order
+        widget: number
+        default: 99
+        hint: "Lower numbers appear first (1 = President)"
+      - label: Bio
+        name: bio
+        widget: text
+      - label: Email
+        name: email
+        widget: string
+        required: false
+        hint: "Board member's contact email (optional)"
+      - label: Headshot
+        name: headshot
+        widget: image
+        required: false
+        hint: "Upload a headshot photo. For best results use a square image."
+        media_folder: /public/uploads
+        public_folder: /uploads
