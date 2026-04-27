@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL;
 ---
 
 <BaseLayout title="Contact | Lake Formosa Neighborhood Association">
@@ -18,35 +20,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <h2 class="section-heading">Send a message</h2>
           <div class="two-col">
             <!-- FORM -->
-            <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
-              <input type="hidden" name="form-name" value="contact" />
-              <p style="display:none;"><label>Skip: <input name="bot-field" /></label></p>
-
+            <form id="contact-form" novalidate>
               <div class="form-row">
-                <label for="name">Your Name</label>
-                <input type="text" id="name" name="name" required placeholder="Jane Smith" />
+                <label for="c-name">Your Name</label>
+                <input type="text" id="c-name" required placeholder="Jane Smith" />
               </div>
               <div class="form-row">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="jane@example.com" />
+                <label for="c-email">Email Address</label>
+                <input type="email" id="c-email" required placeholder="jane@example.com" />
               </div>
               <div class="form-row">
-                <label for="subject">Topic</label>
-                <select id="subject" name="subject">
-                  <option value="general">General question</option>
-                  <option value="meeting">Meeting or events</option>
-                  <option value="concern">Neighborhood concern</option>
-                  <option value="board">Board or membership</option>
-                  <option value="volunteer">Volunteering</option>
-                  <option value="photo">Gallery photo submission</option>
-                  <option value="media">Media inquiry</option>
+                <label for="c-subject">Topic</label>
+                <select id="c-subject">
+                  <option value="General question">General question</option>
+                  <option value="Meeting or events">Meeting or events</option>
+                  <option value="Neighborhood concern">Neighborhood concern</option>
+                  <option value="Board or membership">Board or membership</option>
+                  <option value="Volunteering">Volunteering</option>
+                  <option value="Gallery photo submission">Gallery photo submission</option>
+                  <option value="Media inquiry">Media inquiry</option>
                 </select>
               </div>
               <div class="form-row">
-                <label for="message">Message</label>
-                <textarea id="message" name="message" required placeholder="How can we help?"></textarea>
+                <label for="c-message">Message</label>
+                <textarea id="c-message" required placeholder="How can we help?"></textarea>
               </div>
-              <button type="submit" class="btn-submit">Send Message →</button>
+              <span class="field-error" id="c-error"></span>
+              <button type="submit" class="btn-submit" id="c-btn">Send Message →</button>
             </form>
 
             <!-- CONTACT INFO -->
@@ -86,10 +86,49 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 </BaseLayout>
 
-<script is:inline>
+<script define:vars={{ apiUrl }}>
   const observer = new IntersectionObserver(
     entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
     { threshold: 0.15 }
   );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  const form  = document.getElementById('contact-form');
+  const btn   = document.getElementById('c-btn');
+  const error = document.getElementById('c-error');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    error.textContent = '';
+
+    const name    = document.getElementById('c-name').value.trim();
+    const email   = document.getElementById('c-email').value.trim();
+    const subject = document.getElementById('c-subject').value;
+    const message = document.getElementById('c-message').value.trim();
+
+    if (!name || !email || !message) {
+      error.textContent = 'Please fill in your name, email, and message.';
+      return;
+    }
+
+    btn.textContent = 'Sending...'; btn.disabled = true;
+
+    try {
+      const res = await fetch(`${apiUrl}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, subject, message }),
+      });
+
+      if (res.ok) {
+        btn.textContent = 'Message sent ✓'; btn.style.opacity = '0.6';
+        form.querySelectorAll('input, textarea').forEach(i => i.value = '');
+      } else {
+        throw new Error();
+      }
+    } catch {
+      error.textContent = 'Something went wrong. Please try again or email us directly.';
+      btn.textContent = 'Send Message →'; btn.disabled = false;
+    }
+  });
 </script>

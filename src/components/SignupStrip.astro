@@ -8,6 +8,8 @@ const {
   heading = 'Stay in the loop',
   subtext  = 'Get event reminders and neighborhood news delivered to your inbox.',
 } = Astro.props;
+
+const apiUrl = import.meta.env.PUBLIC_API_URL;
 ---
 
 <section id="signup">
@@ -17,27 +19,14 @@ const {
       <p>{subtext}</p>
     </div>
 
-    <form
-      class="signup-form fade-in"
-      id="signup-form"
-      name="event-reminders"
-      method="POST"
-      data-netlify="true"
-      netlify-honeypot="bot-field"
-      novalidate
-    >
-      <input type="hidden" name="form-name" value="event-reminders" />
-      <p style="display:none;"><label>Skip: <input name="bot-field" /></label></p>
-
+    <form class="signup-form fade-in" id="signup-form" novalidate>
       <div class="signup-name-row">
-        <input type="text" name="first_name" id="signup-first" placeholder="First name" autocomplete="given-name" />
-        <input type="text" name="last_name"  id="signup-last"  placeholder="Last name"  autocomplete="family-name" />
+        <input type="text" id="signup-first" placeholder="First name" autocomplete="given-name" />
+        <input type="text" id="signup-last"  placeholder="Last name"  autocomplete="family-name" />
       </div>
       <span class="field-error" id="signup-name-error"></span>
-
-      <input type="email" name="email" id="signup-email" placeholder="Email address" autocomplete="email" required />
+      <input type="email" id="signup-email" placeholder="Email address" autocomplete="email" required />
       <span class="field-error" id="signup-email-error"></span>
-
       <button type="submit" id="signup-btn">Get Updates →</button>
       <span class="field-error" id="signup-form-error"></span>
     </form>
@@ -50,13 +39,12 @@ const {
     grid-template-columns: 1fr 1fr;
     gap: 0.65rem;
   }
-
   @media (max-width: 400px) {
     .signup-name-row { grid-template-columns: 1fr; }
   }
 </style>
 
-<script is:inline>
+<script define:vars={{ apiUrl }}>
   (function () {
     const form       = document.getElementById('signup-form');
     const firstInput = document.getElementById('signup-first');
@@ -78,24 +66,31 @@ const {
       e.preventDefault();
       nameError.textContent = ''; emailError.textContent = ''; formError.textContent = '';
 
-      const first = firstInput.value.trim();
-      const email = emailInput.value.trim();
+      const first_name = firstInput.value.trim();
+      const last_name  = lastInput.value.trim();
+      const email      = emailInput.value.trim();
       let valid = true;
 
-      if (!first) { nameError.textContent = 'Please enter your first name.'; valid = false; }
+      if (!first_name) { nameError.textContent = 'Please enter your first name.'; valid = false; }
       if (!validEmail(email)) { emailError.textContent = 'Please enter a valid email address.'; valid = false; }
       if (!valid) return;
 
       btn.textContent = 'Submitting...'; btn.disabled = true;
 
       try {
-        const body = new FormData(form);
-        const res  = await fetch('/', { method: 'POST', body });
+        const res = await fetch(`${apiUrl}/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ first_name, last_name, email }),
+        });
 
         if (res.ok) {
           btn.textContent = "You're on the list ✓";
           btn.style.opacity = '0.6';
           firstInput.value = ''; lastInput.value = ''; emailInput.value = '';
+        } else if (res.status === 409) {
+          emailError.textContent = 'This email is already signed up.';
+          btn.textContent = 'Get Updates →'; btn.disabled = false;
         } else {
           throw new Error('non-ok');
         }

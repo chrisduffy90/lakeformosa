@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SignupStrip from '../components/SignupStrip.astro';
 
 const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
+const apiUrl = import.meta.env.PUBLIC_API_URL;
 ---
 
 <BaseLayout title="About | Lake Formosa Neighborhood Association">
@@ -60,15 +61,9 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
 
           <form
             class="get-involved-form"
-            name="get-involved"
-            method="POST"
-            data-netlify="true"
-            netlify-honeypot="bot-field"
             id="get-involved-form"
             novalidate
           >
-            <input type="hidden" name="form-name" value="get-involved" />
-            <p style="display:none;"><label>Skip: <input name="bot-field" /></label></p>
 
             <div class="gi-row-2">
               <div class="gi-field">
@@ -120,7 +115,7 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.css" rel="stylesheet" />
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.js" is:inline></script>
 
-<script define:vars={{ mapboxToken }}>
+<script define:vars={{ mapboxToken, apiUrl }}>
   mapboxgl.accessToken = mapboxToken;
 
   const map = new mapboxgl.Map({
@@ -175,10 +170,13 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
       e.preventDefault();
       giError.textContent = '';
 
-      const first = giForm.querySelector('#gi-first').value.trim();
-      const email = giForm.querySelector('#gi-email').value.trim();
+      const first_name = giForm.querySelector('#gi-first').value.trim();
+      const last_name  = giForm.querySelector('#gi-last').value.trim();
+      const email      = giForm.querySelector('#gi-email').value.trim();
+      const address    = giForm.querySelector('#gi-address').value.trim();
+      const interests  = Array.from(giForm.querySelectorAll('input[name="interests"]:checked')).map(i => i.value);
 
-      if (!first || !email) {
+      if (!first_name || !email) {
         giError.textContent = 'Please fill in your name and email address.';
         return;
       }
@@ -186,7 +184,11 @@ const mapboxToken = import.meta.env.PUBLIC_MAPBOX_TOKEN;
       giBtn.textContent = 'Submitting...'; giBtn.disabled = true;
 
       try {
-        const res = await fetch('/', { method: 'POST', body: new FormData(giForm) });
+        const res = await fetch(`${apiUrl}/get-involved`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ first_name, last_name, email, address, interests }),
+        });
         if (res.ok) {
           giBtn.textContent = 'Submitted ✓'; giBtn.style.opacity = '0.6';
           giForm.querySelectorAll('input[type="text"], input[type="email"]').forEach(i => i.value = '');
