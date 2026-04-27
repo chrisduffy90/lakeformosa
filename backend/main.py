@@ -1,12 +1,17 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select
-from models import (
-    Signup, SignupBase,
-    GetInvolved, GetInvolvedBase,
-    ContactMessage, ContactBase,
-)
-from database import create_db, engine
+from pydantic import BaseModel, EmailStr, field_validator
+from supabase import create_client, Client
+from typing import Optional, List
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = FastAPI()
 
@@ -21,61 +26,113 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-def on_startup():
-    create_db()
-
-# Health check — pinged by cron job to keep Render warm
+# ── Health check ──────────────────────────────────────────────────────────────
 @app.get("/health")
 def health():
     return {"ok": True}
 
 @app.get("/")
-def read_root():
+def root():
     return {"message": "Lake Formosa Neighborhood Association API"}
 
-# ── Event reminder signup ────────────────────────────────────────────────────
+# ── Models ────────────────────────────────────────────────────────────────────
+class SignupRequest(BaseModel):
+    first_name: str
+    last_name: str = ""
+    email: EmailStr
+
+    @field_validator("first_name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("First name cannot be empty")
+        return v
+
+class GetInvolvedRequest(BaseModel):
+    first_name: str
+    last_name: str = ""
+    email: EmailStr
+    address: str = ""
+    interests: List[str] = []
+
+    @field_validator("first_name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("First name cannot be empty")
+        return v
+
+class ContactRequest(BaseModel):
+    name: str
+    email: EmailStr
+    subject: str = "General"
+    message: str
+
+    @field_validator("name", "message")
+    @classmethod
+    def not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Field cannot be empty")
+        return v
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 @app.post("/signup")
-def create_signup(data: SignupBase):
-    signup = Signup.model_validate(data.model_dump())
-    with Session(engine) as session:
-        session.add(signup)
-        session.commit()
-        session.refresh(signup)
-        return signup
+def create_signup(data: SignupRequest):
+    try:
+        result = supabase.table("signups").insert({
+            "first_name": data.first_name.strip(),
+            "last_name":  data.last_name.strip(),
+            "email":      data.email.lower(),
+        }).execute()
+        return {"ok": True, "data": result.data}
+    except Exception as e:
+        msg = str(e)
+        if "duplicate" in msg.lower() or "unique" in msg.lower():
+            raise HTTPException(status_code=409, detail="This email is already signed up")
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
-# ── Get involved ─────────────────────────────────────────────────────────────
 @app.post("/get-involved")
-def create_get_involved(data: GetInvolvedBase):
-    record = GetInvolved.model_validate(data.model_dump())
-    with Session(engine) as session:
-        session.add(record)
-        session.commit()
-        session.refresh(record)
-        return record
+def create_get_involved(data: GetInvolvedRequest):
+    try:
+        result = supabase.table("get_involved").insert({
+            "first_name": data.first_name.strip(),
+            "last_name":  data.last_name.strip(),
+            "email":      data.email.lower(),
+            "address":    data.address.strip(),
+            "interests":  data.interests,
+        }).execute()
+        return {"ok": True, "data": result.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
-# ── Contact form ──────────────────────────────────────────────────────────────
 @app.post("/contact")
-def create_contact(data: ContactBase):
-    message = ContactMessage.model_validate(data.model_dump())
-    with Session(engine) as session:
-        session.add(message)
-        session.commit()
-        session.refresh(message)
-        return message
+def create_contact(data: ContactRequest):
+    try:
+        result = supabase.table("contact_messages").insert({
+            "name":    data.name.strip(),
+            "email":   data.email.lower(),
+            "subject": data.subject.strip(),
+            "message": data.message.strip(),
+        }).execute()
+        return {"ok": True, "data": result.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
-# ── Read endpoints (for board to view submissions) ───────────────────────────
+# ── Read endpoints ────────────────────────────────────────────────────────────
 @app.get("/signups")
 def get_signups():
-    with Session(engine) as session:
-        return session.exec(select(Signup)).all()
+    result = supabase.table("signups").select("*").order("created_at", desc=True).execute()
+    return result.data
 
 @app.get("/get-involved")
 def get_involved():
-    with Session(engine) as session:
-        return session.exec(select(GetInvolved)).all()
+    result = supabase.table("get_involved").select("*").order("created_at", desc=True).execute()
+    return result.data
 
 @app.get("/contact")
 def get_contacts():
-    with Session(engine) as session:
-        return session.exec(select(ContactMessage)).all()
+    result = supabase.table("contact_messages").select("*").order("created_at", desc=True).execute()
+    return result.data
