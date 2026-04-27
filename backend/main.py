@@ -1,9 +1,12 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 from supabase import create_client, Client
 from typing import Optional, List
+import re
+
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -39,7 +42,7 @@ def root():
 class SignupRequest(BaseModel):
     first_name: str
     last_name: str = ""
-    email: EmailStr
+    email: str
 
     @field_validator("first_name")
     @classmethod
@@ -49,10 +52,18 @@ class SignupRequest(BaseModel):
             raise ValueError("First name cannot be empty")
         return v
 
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_RE.match(v):
+            raise ValueError("Invalid email address")
+        return v
+
 class GetInvolvedRequest(BaseModel):
     first_name: str
     last_name: str = ""
-    email: EmailStr
+    email: str
     address: str = ""
     interests: List[str] = []
 
@@ -64,9 +75,17 @@ class GetInvolvedRequest(BaseModel):
             raise ValueError("First name cannot be empty")
         return v
 
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_RE.match(v):
+            raise ValueError("Invalid email address")
+        return v
+
 class ContactRequest(BaseModel):
     name: str
-    email: EmailStr
+    email: str
     subject: str = "General"
     message: str
 
@@ -76,6 +95,14 @@ class ContactRequest(BaseModel):
         v = v.strip()
         if not v:
             raise ValueError("Field cannot be empty")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_RE.match(v):
+            raise ValueError("Invalid email address")
         return v
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
