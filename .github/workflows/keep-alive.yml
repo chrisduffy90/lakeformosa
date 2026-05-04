@@ -1,0 +1,16 @@
+name: Keep Supabase & Render alive
+
+on:
+  schedule:
+    - cron: '0 12 * * 1,4'  # Every Monday and Thursday at noon UTC
+  workflow_dispatch:           # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping lakeformosa Render + Supabase
+        run: curl -f https://lakeformosa.onrender.com/signups
+
+      - name: Ping lochhavenlakes Render + Supabase
+        run: curl -f https://lochhavenlakes.onrender.com/signups
