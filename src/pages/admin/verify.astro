@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Signing in… | Lake Formosa NA">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Signing in…</h1>
+      <p id="verify-msg">Verifying your sign-in link.</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { setSession, apiFetch } from '../../lib/api';
+
+  async function verify() {
+    const msgEl = document.getElementById('verify-msg')!;
+    const token = new URLSearchParams(window.location.search).get('token');
+
+    if (!token) {
+      msgEl.textContent = 'Invalid link. Please request a new one.';
+      msgEl.style.color = '#b91c1c';
+      setTimeout(() => window.location.href = '/admin', 2500);
+      return;
+    }
+
+    try {
+      const res = await apiFetch(`/auth/verify?token=${encodeURIComponent(token)}`);
+      if (res.ok) {
+        const { session_id, email, name } = await res.json() as { session_id: string; email: string; name: string };
+        setSession(session_id, email, name);
+        window.location.href = '/admin';
+      } else {
+        msgEl.textContent = 'This link has expired or already been used. Please request a new one.';
+        msgEl.style.color = '#b91c1c';
+        setTimeout(() => window.location.href = '/admin', 3000);
+      }
+    } catch {
+      msgEl.textContent = 'Something went wrong. Please try again.';
+      msgEl.style.color = '#b91c1c';
+      setTimeout(() => window.location.href = '/admin', 3000);
+    }
+  }
+
+  verify();
+</script>

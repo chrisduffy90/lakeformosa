@@ -17,12 +17,14 @@ const ALLOWED_ORIGINS = [
   'http://localhost:4322',
 ];
 
+const SITE_URL = 'https://lakeformosa.org';
+
 function corsHeaders(origin: string | null): HeadersInit {
   const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key, X-Session-Id',
   };
 }
 
@@ -37,13 +39,27 @@ function isValidEmail(v: unknown): v is string {
   return typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
-function isAdmin(request: Request, env: Env): boolean {
-  return request.headers.get('X-Admin-Key') === env.ADMIN_KEY;
+function makeToken(): string {
+  return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, '');
 }
 
-function requireAdmin(request: Request, env: Env, origin: string | null): Response | null {
-  if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
-  return null;
+type Sql = ReturnType<typeof neon>;
+
+async function checkAdmin(request: Request, env: Env, sql: Sql, origin: string | null): Promise<Response | null> {
+  // Programmatic access via admin key
+  if (request.headers.get('X-Admin-Key') === env.ADMIN_KEY) return null;
+
+  // Session-based access (UI login)
+  const sessionId = request.headers.get('X-Session-Id');
+  if (sessionId) {
+    const rows = await sql`
+      SELECT 1 FROM admin_sessions
+      WHERE session_id = ${sessionId} AND expires_at > NOW()
+    `;
+    if (rows.length > 0) return null;
+  }
+
+  return json({ error: 'Unauthorized' }, 401, origin);
 }
 
 export default {
@@ -54,7 +70,8 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
+    const { pathname } = url;
     const sql = neon(env.DATABASE_URL);
 
     try {
@@ -63,11 +80,110 @@ export default {
         return json({ ok: true, message: 'Lake Formosa Neighborhood Association API' }, 200, origin);
       }
 
-      // Rate limit all POST/PUT/DELETE endpoints (enforced on Workers Paid plan only; no-op on free)
+      // Rate limit all mutating requests (enforced on Workers Paid plan only; no-op on free)
       if (request.method === 'POST' || request.method === 'PUT' || request.method === 'DELETE') {
         const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
         const { success } = await env.RATE_LIMITER.limit({ key: ip });
         if (!success) return json({ error: 'Too many requests. Please try again later.' }, 429, origin);
+      }
+
+      // ── AUTH ──────────────────────────────────────────────────────────────────
+
+      // POST /auth/request — send magic link
+      if (pathname === '/auth/request' && request.method === 'POST') {
+        const { email } = await request.json() as { email?: string };
+        if (!isValidEmail(email)) return json({ error: 'Invalid email address' }, 400, origin);
+        const normalized = email.trim().toLowerCase();
+
+        const authorized = await sql`SELECT name FROM admin_users WHERE email = ${normalized}`;
+        // Return same response whether authorized or not (prevents email enumeration)
+        if (authorized.length > 0) {
+          const token = makeToken();
+          await sql`INSERT INTO admin_tokens (token, email) VALUES (${token}, ${normalized})`;
+          await sql`DELETE FROM admin_tokens WHERE expires_at < NOW()`;
+
+          const link = `${SITE_URL}/admin/verify?token=${token}`;
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${env.RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'LFNA Admin <onboarding@resend.dev>',
+              to: [normalized],
+              subject: 'Your Lake Formosa NA sign-in link',
+              text: `Hi ${authorized[0].name || 'there'},\n\nClick the link below to sign in to the LFNA admin panel. This link expires in 1 hour and can only be used once.\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.`,
+            }),
+          });
+        }
+
+        return json({ ok: true }, 200, origin);
+      }
+
+      // GET /auth/verify?token=xxx — exchange token for session
+      if (pathname === '/auth/verify' && request.method === 'GET') {
+        const token = url.searchParams.get('token');
+        if (!token) return json({ error: 'Missing token' }, 400, origin);
+
+        const rows = await sql`
+          SELECT email FROM admin_tokens
+          WHERE token = ${token} AND expires_at > NOW() AND used_at IS NULL
+        `;
+        if (!rows.length) return json({ error: 'Invalid or expired sign-in link' }, 401, origin);
+
+        const { email } = rows[0] as { email: string };
+        await sql`UPDATE admin_tokens SET used_at = NOW() WHERE token = ${token}`;
+
+        const sessionId = makeToken();
+        await sql`INSERT INTO admin_sessions (session_id, email) VALUES (${sessionId}, ${email})`;
+        await sql`DELETE FROM admin_sessions WHERE expires_at < NOW()`;
+
+        const nameRows = await sql`SELECT name FROM admin_users WHERE email = ${email}`;
+        const name = (nameRows[0] as { name: string } | undefined)?.name ?? email;
+
+        return json({ session_id: sessionId, email, name }, 200, origin);
+      }
+
+      // DELETE /auth/session — sign out
+      if (pathname === '/auth/session' && request.method === 'DELETE') {
+        const sessionId = request.headers.get('X-Session-Id');
+        if (sessionId) await sql`DELETE FROM admin_sessions WHERE session_id = ${sessionId}`;
+        return json({ ok: true }, 200, origin);
+      }
+
+      // ── ADMIN USERS ───────────────────────────────────────────────────────────
+
+      // GET /admin-users — list authorized admins
+      if (pathname === '/admin-users' && request.method === 'GET') {
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
+        const rows = await sql`SELECT email, name, created_at FROM admin_users ORDER BY created_at`;
+        return json(rows, 200, origin);
+      }
+
+      // POST /admin-users — add an authorized admin
+      if (pathname === '/admin-users' && request.method === 'POST') {
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
+        const { email, name = '' } = await request.json() as { email?: string; name?: string };
+        if (!isValidEmail(email)) return json({ error: 'Invalid email address' }, 400, origin);
+        const normalized = email.trim().toLowerCase();
+        await sql`
+          INSERT INTO admin_users (email, name) VALUES (${normalized}, ${name})
+          ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+        `;
+        return json({ ok: true }, 200, origin);
+      }
+
+      // DELETE /admin-users/:email — remove an admin
+      const adminUserMatch = pathname.match(/^\/admin-users\/([^/]+)$/);
+      if (adminUserMatch && request.method === 'DELETE') {
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
+        const email = decodeURIComponent(adminUserMatch[1]);
+        await sql`DELETE FROM admin_users WHERE email = ${email}`;
+        return json({ ok: true }, 200, origin);
       }
 
       // ── BOARD MEMBERS ─────────────────────────────────────────────────────────
@@ -88,7 +204,7 @@ export default {
 
       // POST /board-members — admin
       if (pathname === '/board-members' && request.method === 'POST') {
-        const deny = requireAdmin(request, env, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
         if (deny) return deny;
         const data = await request.json() as Record<string, unknown>;
         const rows = await sql`
@@ -102,16 +218,16 @@ export default {
 
       // PUT /board-members/:id — admin
       if (memberMatch && request.method === 'PUT') {
-        const deny = requireAdmin(request, env, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
         if (deny) return deny;
         const data = await request.json() as Record<string, unknown>;
         const rows = await sql`
           UPDATE board_members SET
-            name        = ${data.name},
-            role        = ${data.role},
-            "order"     = ${data.order ?? 99},
-            bio         = ${data.bio ?? ''},
-            email       = ${data.email ?? ''},
+            name         = ${data.name},
+            role         = ${data.role},
+            "order"      = ${data.order ?? 99},
+            bio          = ${data.bio ?? ''},
+            email        = ${data.email ?? ''},
             headshot_url = ${data.headshot_url ?? null}
           WHERE id = ${memberMatch[1]}
           RETURNING *`;
@@ -121,7 +237,7 @@ export default {
 
       // DELETE /board-members/:id — admin
       if (memberMatch && request.method === 'DELETE') {
-        const deny = requireAdmin(request, env, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
         if (deny) return deny;
         await sql`DELETE FROM board_members WHERE id = ${memberMatch[1]}`;
         return json({ ok: true }, 200, origin);
@@ -129,9 +245,9 @@ export default {
 
       // ── EVENTS ────────────────────────────────────────────────────────────────
 
-      // GET /events — public (upcoming) or all with ?all=1 for admin
+      // GET /events — public upcoming, or all with ?all=1
       if (pathname === '/events' && request.method === 'GET') {
-        const showAll = new URL(request.url).searchParams.get('all') === '1';
+        const showAll = url.searchParams.get('all') === '1';
         const rows = showAll
           ? await sql`SELECT * FROM events ORDER BY date`
           : await sql`SELECT * FROM events WHERE date >= CURRENT_DATE ORDER BY date`;
@@ -148,7 +264,7 @@ export default {
 
       // POST /events — admin
       if (pathname === '/events' && request.method === 'POST') {
-        const deny = requireAdmin(request, env, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
         if (deny) return deny;
         const data = await request.json() as Record<string, unknown>;
         const rows = await sql`
@@ -160,7 +276,7 @@ export default {
 
       // PUT /events/:id — admin
       if (eventMatch && request.method === 'PUT') {
-        const deny = requireAdmin(request, env, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
         if (deny) return deny;
         const data = await request.json() as Record<string, unknown>;
         const rows = await sql`
@@ -178,7 +294,7 @@ export default {
 
       // DELETE /events/:id — admin
       if (eventMatch && request.method === 'DELETE') {
-        const deny = requireAdmin(request, env, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
         if (deny) return deny;
         await sql`DELETE FROM events WHERE id = ${eventMatch[1]}`;
         return json({ ok: true }, 200, origin);
@@ -189,16 +305,13 @@ export default {
       // POST /signup
       if (pathname === '/signup' && request.method === 'POST') {
         const { first_name, last_name = '', email } = await request.json() as Record<string, string>;
-
         if (!first_name?.trim()) return json({ error: 'First name cannot be empty' }, 400, origin);
         if (!isValidEmail(email)) return json({ error: 'Invalid email address' }, 400, origin);
-
         try {
           const rows = await sql`
             INSERT INTO signups (first_name, last_name, email)
             VALUES (${first_name.trim()}, ${last_name.trim()}, ${email.trim().toLowerCase()})
-            RETURNING *
-          `;
+            RETURNING *`;
           return json({ ok: true, data: rows[0] }, 200, origin);
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : '';
@@ -209,9 +322,10 @@ export default {
         }
       }
 
-      // GET /signups — admin only
+      // GET /signups — admin
       if (pathname === '/signups' && request.method === 'GET') {
-        if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
         const rows = await sql`SELECT * FROM signups ORDER BY created_at DESC`;
         return json(rows, 200, origin);
       }
@@ -220,28 +334,23 @@ export default {
       if (pathname === '/get-involved' && request.method === 'POST') {
         const { first_name, last_name = '', email, address = '', interests = [] } =
           await request.json() as Record<string, unknown>;
-
         if (!first_name || !(first_name as string).trim())
           return json({ error: 'First name cannot be empty' }, 400, origin);
         if (!isValidEmail(email)) return json({ error: 'Invalid email address' }, 400, origin);
-
         const rows = await sql`
           INSERT INTO get_involved (first_name, last_name, email, address, interests)
           VALUES (
-            ${(first_name as string).trim()},
-            ${(last_name as string).trim()},
-            ${(email as string).trim().toLowerCase()},
-            ${(address as string).trim()},
+            ${(first_name as string).trim()}, ${(last_name as string).trim()},
+            ${(email as string).trim().toLowerCase()}, ${(address as string).trim()},
             ${interests as string[]}
-          )
-          RETURNING *
-        `;
+          ) RETURNING *`;
         return json({ ok: true, data: rows[0] }, 200, origin);
       }
 
-      // GET /get-involved — admin only
+      // GET /get-involved — admin
       if (pathname === '/get-involved' && request.method === 'GET') {
-        if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
         const rows = await sql`SELECT * FROM get_involved ORDER BY created_at DESC`;
         return json(rows, 200, origin);
       }
@@ -250,7 +359,6 @@ export default {
       if (pathname === '/contact' && request.method === 'POST') {
         const { name, email, subject = 'General', message } =
           await request.json() as Record<string, string>;
-
         if (!name?.trim() || !message?.trim())
           return json({ error: 'Name and message are required' }, 400, origin);
         if (!isValidEmail(email)) return json({ error: 'Invalid email address' }, 400, origin);
@@ -258,15 +366,11 @@ export default {
         const rows = await sql`
           INSERT INTO contact_messages (name, email, subject, message)
           VALUES (${name.trim()}, ${email.trim().toLowerCase()}, ${subject.trim()}, ${message.trim()})
-          RETURNING *
-        `;
+          RETURNING *`;
 
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'LFNA Contact Form <onboarding@resend.dev>',
             to: ['lakeformosanaorl@gmail.com', 'chrisduffy90@gmail.com'],
@@ -279,9 +383,10 @@ export default {
         return json({ ok: true, data: rows[0] }, 200, origin);
       }
 
-      // GET /contact — admin only
+      // GET /contact — admin
       if (pathname === '/contact' && request.method === 'GET') {
-        if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
         const rows = await sql`SELECT * FROM contact_messages ORDER BY created_at DESC`;
         return json(rows, 200, origin);
       }

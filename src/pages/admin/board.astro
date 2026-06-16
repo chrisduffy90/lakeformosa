@@ -60,14 +60,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
-  import { getAdminKey, adminFetch } from '../../lib/api';
+  import { getSessionId, clearSession, adminFetch } from '../../lib/api';
 
   type Member = {
     id: string; name: string; role: string; order: number;
     bio: string; email: string; headshot_url: string | null;
   };
 
-  if (!getAdminKey()) window.location.href = '/admin';
+  if (!getSessionId()) window.location.href = '/admin';
 
   async function loadBoard() {
     const listEl = document.getElementById('board-list')!;

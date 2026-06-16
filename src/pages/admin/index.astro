@@ -6,28 +6,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   <div class="page-hero">
     <div class="page-hero-inner">
       <h1>Board Admin</h1>
-      <p id="admin-subtitle">Enter your admin key to continue.</p>
+      <p id="admin-subtitle">Sign in to manage the neighborhood association website.</p>
     </div>
   </div>
 
-  <!-- Key prompt -->
-  <section id="key-prompt" class="surface">
+  <!-- Login form -->
+  <section id="login-section" class="surface" style="display:none">
     <div class="section-inner">
       <div class="login-wrap fade-in">
-        <form id="key-form" novalidate>
-          <div class="key-field">
-            <label for="key-input" class="sr-only">Admin key</label>
-            <input type="password" id="key-input" placeholder="Paste admin key…" autocomplete="off" required />
-            <button type="submit">Unlock →</button>
+        <p class="login-desc">Enter your email address. If you're an authorized board member, we'll send you a sign-in link.</p>
+        <form id="login-form" novalidate>
+          <div class="email-field">
+            <label for="email-input" class="sr-only">Email address</label>
+            <input type="email" id="email-input" placeholder="your@email.com" autocomplete="email" required />
+            <button type="submit" id="login-btn">Send link →</button>
           </div>
-          <span class="field-error" id="key-error"></span>
+          <span class="field-error" id="login-error"></span>
         </form>
+        <div id="sent-msg" class="sent-msg" style="display:none">
+          Check your email — a sign-in link is on its way. It expires in 1 hour.
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Dashboard -->
-  <section class="surface" id="admin-content" style="display:none">
+  <section id="dashboard-section" class="surface" style="display:none">
     <div class="section-inner">
       <div class="admin-grid fade-in">
         <a href="/admin/board" class="admin-card">
@@ -42,21 +46,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p>Add, edit, or remove upcoming neighborhood events.</p>
           <span class="admin-card-link">Manage →</span>
         </a>
+        <a href="/admin/users" class="admin-card">
+          <span class="admin-card-icon">🔑</span>
+          <h2>Admin Users</h2>
+          <p>Manage who can access the admin panel.</p>
+          <span class="admin-card-link">Manage →</span>
+        </a>
       </div>
-
       <div class="admin-footer fade-in">
-        <button id="logout-btn" class="logout-btn">Clear session</button>
+        <button id="signout-btn" class="signout-btn">Sign out</button>
       </div>
     </div>
   </section>
 </BaseLayout>
 
 <script>
-  import { getAdminKey, setAdminKey, clearAdminKey, adminFetch } from '../../lib/api';
+  import { getSessionId, getSessionName, clearSession, adminFetch, apiFetch } from '../../lib/api';
 
-  async function tryUnlock(key: string): Promise<boolean> {
+  async function checkSession(): Promise<boolean> {
+    const id = getSessionId();
+    if (!id) return false;
     try {
-      setAdminKey(key);
       const res = await adminFetch('/signups');
       return res.ok;
     } catch {
@@ -65,52 +75,69 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   async function init() {
-    const stored = getAdminKey();
-    if (stored) {
-      const ok = await tryUnlock(stored);
-      if (ok) { showDashboard(); return; }
-      clearAdminKey();
+    const valid = await checkSession();
+    if (valid) {
+      showDashboard();
+    } else {
+      clearSession();
+      showLogin();
     }
-    showPrompt();
   }
 
   function showDashboard() {
-    document.getElementById('key-prompt')!.style.display = 'none';
-    document.getElementById('admin-content')!.style.display = '';
-    document.getElementById('admin-subtitle')!.textContent = 'Welcome back.';
+    const name = getSessionName();
+    document.getElementById('admin-subtitle')!.textContent = `Welcome back${name ? ', ' + name : ''}.`;
+    document.getElementById('login-section')!.style.display = 'none';
+    document.getElementById('dashboard-section')!.style.display = '';
   }
 
-  function showPrompt() {
-    document.getElementById('key-prompt')!.style.display = '';
-    document.getElementById('admin-content')!.style.display = 'none';
+  function showLogin() {
+    document.getElementById('login-section')!.style.display = '';
+    document.getElementById('dashboard-section')!.style.display = 'none';
   }
 
-  document.getElementById('key-form')!.addEventListener('submit', async (e) => {
+  document.getElementById('login-form')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const input = document.getElementById('key-input') as HTMLInputElement;
-    const errorEl = document.getElementById('key-error')!;
-    const btn = (e.target as HTMLFormElement).querySelector('button')!;
+    const email = (document.getElementById('email-input') as HTMLInputElement).value.trim();
+    const btn = document.getElementById('login-btn') as HTMLButtonElement;
+    const errEl = document.getElementById('login-error')!;
+    const sentEl = document.getElementById('sent-msg')!;
 
-    btn.textContent = 'Checking…';
-    btn.setAttribute('disabled', '');
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+    errEl.textContent = '';
 
-    const ok = await tryUnlock(input.value.trim());
-
-    btn.textContent = 'Unlock →';
-    btn.removeAttribute('disabled');
-
-    if (ok) {
-      showDashboard();
-    } else {
-      clearAdminKey();
-      errorEl.textContent = 'Invalid key. Please try again.';
-      input.focus();
+    try {
+      const res = await apiFetch('/auth/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        document.getElementById('login-form')!.style.display = 'none';
+        sentEl.style.display = '';
+      } else {
+        errEl.textContent = 'Something went wrong. Please try again.';
+        btn.textContent = 'Send link →';
+        btn.disabled = false;
+      }
+    } catch {
+      errEl.textContent = 'Something went wrong. Please try again.';
+      btn.textContent = 'Send link →';
+      btn.disabled = false;
     }
   });
 
-  document.getElementById('logout-btn')!.addEventListener('click', () => {
-    clearAdminKey();
-    showPrompt();
+  document.getElementById('signout-btn')!.addEventListener('click', async () => {
+    await adminFetch('/auth/session', { method: 'DELETE' });
+    clearSession();
+    showLogin();
+    document.getElementById('admin-subtitle')!.textContent = 'Sign in to manage the neighborhood association website.';
+    document.getElementById('login-form')!.style.display = '';
+    document.getElementById('sent-msg')!.style.display = 'none';
+    (document.getElementById('email-input') as HTMLInputElement).value = '';
+    document.getElementById('login-btn')!.textContent = 'Send link →';
+    (document.getElementById('login-btn') as HTMLButtonElement).disabled = false;
   });
 
   init();
@@ -127,13 +154,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <style>
   .login-wrap { max-width: 480px; }
 
-  .key-field {
+  .login-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+
+  .email-field {
     display: flex;
-    gap: 0;
     border: 1px solid var(--border);
   }
 
-  .key-field input {
+  .email-field input {
     flex: 1;
     padding: 0.75rem 1rem;
     border: none;
@@ -144,7 +177,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     color: var(--text-primary);
   }
 
-  .key-field button {
+  .email-field button {
     background: var(--accent);
     color: #fff;
     border: none;
@@ -157,8 +190,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     transition: opacity 0.2s;
   }
 
-  .key-field button:hover { opacity: 0.85; }
-  .key-field button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .email-field button:hover { opacity: 0.85; }
+  .email-field button:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .field-error {
     display: block;
@@ -168,9 +201,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     min-height: 1.2em;
   }
 
+  .sent-msg {
+    padding: 1rem 1.25rem;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
   .admin-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
     margin-bottom: 3rem;
   }
@@ -190,6 +232,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .admin-card:hover {
     border-color: var(--accent);
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    text-decoration: none;
   }
 
   .admin-card-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
@@ -219,7 +262,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   .admin-footer { padding-top: 1rem; border-top: 1px solid var(--border); }
 
-  .logout-btn {
+  .signout-btn {
     background: none;
     border: 1px solid var(--border);
     color: var(--text-secondary);
@@ -230,9 +273,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     transition: border-color 0.2s, color 0.2s;
   }
 
-  .logout-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
+  .signout-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
 
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     .admin-grid { grid-template-columns: 1fr; }
   }
 </style>
