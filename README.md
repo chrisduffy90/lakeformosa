@@ -1,43 +1,60 @@
-# Astro Starter Kit: Minimal
+# Lake Formosa Neighborhood Association
+
+Website for the Lake Formosa Neighborhood Association, Orlando FL.
+Live at [lakeformosa.org](https://lakeformosa.org).
+
+## Infrastructure
+
+| Layer | Service | Notes |
+|---|---|---|
+| Frontend | [Vercel](https://vercel.com) | Static Astro build, auto-deploys from `main` |
+| API | [Cloudflare Workers](https://workers.cloudflare.com) | `lakeformosa-api.chrisduffy90.workers.dev` |
+| Database | [Neon](https://neon.tech) | Postgres, project: LFNA |
+| Auth | [Supabase](https://supabase.com) | Admin panel login only |
+| Domain | Namecheap | DNS pointed at Vercel |
+
+## Data
+
+| Table | What it stores |
+|---|---|
+| `signups` | Newsletter signup form submissions |
+| `contact_messages` | Contact form submissions |
+| `get_involved` | Get involved form submissions |
+
+## API endpoints
+
+Worker lives at `https://lakeformosa-api.chrisduffy90.workers.dev`
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/signup` | Newsletter signup |
+| POST | `/contact` | Contact form |
+| POST | `/get-involved` | Get involved form |
+| GET | `/signups` | All signups |
+| GET | `/contact` | All contact messages |
+| GET | `/get-involved` | All get-involved submissions |
+| GET | `/health` | Health check |
+
+## Local development
 
 ```sh
-npm create astro@latest -- --template minimal
+# Frontend
+npm install
+npm run dev        # runs at localhost:4321
+
+# Worker (API)
+cd worker
+npm install
+npm run dev        # runs at localhost:8787
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+The Worker reads `worker/.dev.vars` for local secrets (not committed):
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```
+DATABASE_URL=your_neon_connection_string
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Deployment
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- **Frontend** — push to `main`, Vercel auto-deploys
+- **Worker** — `cd worker && npm run deploy`
