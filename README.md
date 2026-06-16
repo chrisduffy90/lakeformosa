@@ -11,6 +11,7 @@ Live at [lakeformosa.org](https://lakeformosa.org).
 | API | [Cloudflare Workers](https://workers.cloudflare.com) | `lakeformosa-api.chrisduffy90.workers.dev` |
 | Database | [Neon](https://neon.tech) | Postgres, project: LFNA |
 | Auth | [Supabase](https://supabase.com) | Admin panel login only |
+| Email | [Resend](https://resend.com) | Contact form notifications |
 | Domain | Namecheap | DNS pointed at Vercel |
 
 ## Data
@@ -52,7 +53,10 @@ The Worker reads `worker/.dev.vars` for local secrets (not committed):
 
 ```
 DATABASE_URL=your_neon_connection_string
+RESEND_API_KEY=your_resend_api_key
 ```
+
+Contact form submissions trigger an email notification to `lakeformosanaorl@gmail.com` and `chrisduffy90@gmail.com` via Resend. The reply-to is set to the submitter's email so you can reply directly.
 
 ## Deployment
 
