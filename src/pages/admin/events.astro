@@ -1,0 +1,327 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Events — Admin | Lake Formosa NA">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Events</h1>
+      <p><a href="/admin" style="color:inherit;opacity:0.7;font-size:0.85rem">← Back to admin</a></p>
+    </div>
+  </div>
+
+  <section class="surface">
+    <div class="section-inner">
+      <div id="events-list" class="events-list fade-in">
+        <p class="loading-msg">Loading…</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-inner">
+      <div class="add-section fade-in">
+        <h2 class="section-heading">Add an event</h2>
+        <form id="add-form" class="event-form" novalidate>
+          <div class="form-field">
+            <label>Title *</label>
+            <input type="text" name="title" required />
+          </div>
+          <div class="form-row-3">
+            <div class="form-field">
+              <label>Date *</label>
+              <input type="date" name="date" required />
+            </div>
+            <div class="form-field">
+              <label>Time *</label>
+              <input type="text" name="time" placeholder="7:00 PM" required />
+            </div>
+            <div class="form-field">
+              <label>Location *</label>
+              <input type="text" name="location" required />
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Description *</label>
+            <textarea name="description" rows="3" required></textarea>
+          </div>
+          <span class="field-error" id="add-error"></span>
+          <button type="submit" id="add-btn">Add Event →</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { getAdminKey, adminFetch } from '../../lib/api';
+
+  type Evt = { id: string; title: string; date: string; time: string; location: string; description: string };
+
+  if (!getAdminKey()) window.location.href = '/admin';
+
+  function fmtDate(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function esc(str: string) {
+    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function loadEvents() {
+    const listEl = document.getElementById('events-list')!;
+    try {
+      const res = await adminFetch('/events?all=1');
+      const events = await res.json() as Evt[];
+      if (!events.length) {
+        listEl.innerHTML = '<p class="loading-msg">No events yet.</p>';
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      listEl.innerHTML = events.map(ev => `
+        <div class="event-row ${ev.date < today ? 'past' : ''}" data-id="${ev.id}">
+          <div class="event-info">
+            <strong>${esc(ev.title)}</strong>
+            <span class="event-meta">${fmtDate(ev.date)} · ${esc(ev.time)} · ${esc(ev.location)}</span>
+          </div>
+          <div class="event-actions">
+            <button class="btn-edit" data-id="${ev.id}">Edit</button>
+            <button class="btn-delete" data-id="${ev.id}">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll<HTMLButtonElement>('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => openEdit(events.find(e => e.id === btn.dataset.id)!));
+      });
+
+      listEl.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteEvent(btn.dataset.id!));
+      });
+    } catch {
+      listEl.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Failed to load events.</p>';
+    }
+  }
+
+  async function deleteEvent(id: string) {
+    if (!confirm('Delete this event?')) return;
+    await adminFetch(`/events/${id}`, { method: 'DELETE' });
+    loadEvents();
+  }
+
+  function openEdit(ev: Evt) {
+    const existing = document.getElementById('edit-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'edit-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal">
+        <h2 class="modal-title">Edit Event</h2>
+        <form id="edit-form" class="event-form" novalidate>
+          <div class="form-field">
+            <label>Title *</label>
+            <input type="text" name="title" value="${esc(ev.title)}" required />
+          </div>
+          <div class="form-row-3">
+            <div class="form-field">
+              <label>Date *</label>
+              <input type="date" name="date" value="${ev.date}" required />
+            </div>
+            <div class="form-field">
+              <label>Time *</label>
+              <input type="text" name="time" value="${esc(ev.time)}" required />
+            </div>
+            <div class="form-field">
+              <label>Location *</label>
+              <input type="text" name="location" value="${esc(ev.location)}" required />
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Description *</label>
+            <textarea name="description" rows="3" required>${esc(ev.description)}</textarea>
+          </div>
+          <span class="field-error" id="edit-error"></span>
+          <div class="modal-actions">
+            <button type="button" id="cancel-edit" class="btn-cancel">Cancel</button>
+            <button type="submit">Save Changes →</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('cancel-edit')!.addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+    document.getElementById('edit-form')!.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target as HTMLFormElement);
+      const payload = {
+        title: fd.get('title'), date: fd.get('date'), time: fd.get('time'),
+        location: fd.get('location'), description: fd.get('description') ?? '',
+      };
+      const btn = (e.target as HTMLFormElement).querySelector<HTMLButtonElement>('[type=submit]')!;
+      btn.textContent = 'Saving…'; btn.disabled = true;
+      const res = await adminFetch(`/events/${ev.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      if (res.ok) { modal.remove(); loadEvents(); }
+      else { document.getElementById('edit-error')!.textContent = 'Save failed. Try again.'; btn.textContent = 'Save Changes →'; btn.disabled = false; }
+    });
+  }
+
+  document.getElementById('add-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target as HTMLFormElement);
+    const payload = {
+      title: fd.get('title'), date: fd.get('date'), time: fd.get('time'),
+      location: fd.get('location'), description: fd.get('description') ?? '',
+    };
+    const btn = document.getElementById('add-btn') as HTMLButtonElement;
+    const errEl = document.getElementById('add-error')!;
+    btn.textContent = 'Adding…'; btn.disabled = true;
+    const res = await adminFetch('/events', { method: 'POST', body: JSON.stringify(payload) });
+    if (res.ok) { (e.target as HTMLFormElement).reset(); loadEvents(); }
+    else { errEl.textContent = 'Add failed. Try again.'; }
+    btn.textContent = 'Add Event →'; btn.disabled = false;
+  });
+
+  loadEvents();
+</script>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+<style>
+  .events-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .event-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid var(--border);
+    background: white;
+  }
+
+  .event-row.past { opacity: 0.55; }
+
+  .event-info { display: flex; flex-direction: column; gap: 0.25rem; }
+  .event-info strong { font-size: 0.95rem; color: var(--text-primary); }
+  .event-meta { font-size: 0.8rem; color: var(--text-secondary); }
+
+  .event-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+  .btn-edit, .btn-delete {
+    padding: 0.4rem 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  .btn-edit { background: none; border: 1px solid var(--border); color: var(--text-secondary); }
+  .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-delete { background: none; border: 1px solid #fca5a5; color: #b91c1c; }
+  .btn-delete:hover { background: #fef2f2; }
+
+  .add-section { max-width: 680px; }
+
+  .section-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+  }
+
+  .event-form { display: flex; flex-direction: column; gap: 1rem; }
+
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 1rem; }
+
+  .form-field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .form-field label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .form-field input, .form-field textarea {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: white;
+    color: var(--text-primary);
+    outline: none;
+    resize: vertical;
+  }
+
+  .form-field input:focus, .form-field textarea:focus { border-color: var(--accent); }
+
+  .field-error { display: block; font-size: 0.82rem; color: #b91c1c; min-height: 1.2em; }
+
+  .event-form > button[type=submit] {
+    align-self: flex-start;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.4rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .event-form > button[type=submit]:hover { opacity: 0.85; }
+  .event-form > button[type=submit]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 1rem;
+  }
+
+  .modal {
+    background: white;
+    padding: 2rem 2.25rem;
+    width: 100%; max-width: 620px;
+    max-height: 90vh; overflow-y: auto;
+  }
+
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+  .btn-cancel {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.65rem 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .loading-msg { font-size: 0.9rem; color: var(--text-secondary); }
+
+  @media (max-width: 680px) {
+    .event-row { flex-direction: column; align-items: flex-start; }
+    .form-row-3 { grid-template-columns: 1fr; }
+  }
+</style>

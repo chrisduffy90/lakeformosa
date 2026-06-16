@@ -1,17 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
 import SignupStrip from '../components/SignupStrip.astro';
-
-const allEvents = await getCollection('events');
-
-const events = allEvents
-  .sort((a, b) => a.data.date.localeCompare(b.data.date))
-  .map(e => ({
-    ...e.data,
-    month: new Date(e.data.date + 'T00:00:00').toLocaleString('en-US', { month: 'short' }),
-    day:   new Date(e.data.date + 'T00:00:00').toLocaleString('en-US', { day: 'numeric' }),
-  }));
 ---
 
 <BaseLayout title="Events | Lake Formosa Neighborhood Association">
@@ -28,23 +17,8 @@ const events = allEvents
         <span class="section-label">Calendar</span>
         <div>
           <h2 class="section-heading">Upcoming events</h2>
-          <div class="placeholder-notice">
-            These are sample events. The board is working on confirming dates and details — check back soon or <a href="/contact">contact us</a> for the latest.
-          </div>
-          <div class="event-list">
-            {events.map(event => (
-              <div class="event-row">
-                <div class="event-date-block">
-                  <div class="event-month">{event.month}</div>
-                  <div class="event-day">{event.day}</div>
-                </div>
-                <div class="event-info">
-                  <h3>{event.title}</h3>
-                  <p class="event-meta">{event.time} · {event.location}</p>
-                  <p class="event-desc">{event.description}</p>
-                </div>
-              </div>
-            ))}
+          <div id="event-list" class="event-list">
+            <p class="loading-msg">Loading events…</p>
           </div>
         </div>
       </div>
@@ -73,18 +47,47 @@ const events = allEvents
   />
 </BaseLayout>
 
-<style>
-  .placeholder-notice {
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    padding: 0.75rem 1rem;
-    border-left: 2px solid var(--border);
-    margin-bottom: 1.25rem;
-    font-style: italic;
+<script>
+  import { apiFetch } from '../lib/api';
+
+  type Evt = { id: string; title: string; date: string; time: string; location: string; description: string };
+
+  function fmtMonth(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { month: 'short' }).toUpperCase();
   }
-  .placeholder-notice a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
-</style>
+  function fmtDay(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { day: 'numeric' });
+  }
+
+  async function loadEvents() {
+    const list = document.getElementById('event-list')!;
+    try {
+      const res = await apiFetch('/events');
+      const data = await res.json() as Evt[];
+      if (data.length === 0) {
+        list.innerHTML = '<p class="loading-msg">No upcoming events scheduled. Check back soon.</p>';
+        return;
+      }
+      list.innerHTML = data.map(ev => `
+        <div class="event-row">
+          <div class="event-date-block">
+            <div class="event-month">${fmtMonth(ev.date)}</div>
+            <div class="event-day">${fmtDay(ev.date)}</div>
+          </div>
+          <div class="event-info">
+            <h3>${ev.title}</h3>
+            <p class="event-meta">${ev.time} · ${ev.location}</p>
+            <p class="event-desc">${ev.description}</p>
+          </div>
+        </div>
+      `).join('');
+    } catch {
+      list.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Could not load events. Please try again later.</p>';
+    }
+  }
+
+  loadEvents();
+</script>
 
 <script is:inline>
   const observer = new IntersectionObserver(
@@ -93,3 +96,7 @@ const events = allEvents
   );
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 </script>
+
+<style>
+  .loading-msg { font-size: 0.9rem; color: var(--text-secondary); }
+</style>

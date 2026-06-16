@@ -1,0 +1,238 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Admin | Lake Formosa NA">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Board Admin</h1>
+      <p id="admin-subtitle">Enter your admin key to continue.</p>
+    </div>
+  </div>
+
+  <!-- Key prompt -->
+  <section id="key-prompt" class="surface">
+    <div class="section-inner">
+      <div class="login-wrap fade-in">
+        <form id="key-form" novalidate>
+          <div class="key-field">
+            <label for="key-input" class="sr-only">Admin key</label>
+            <input type="password" id="key-input" placeholder="Paste admin key…" autocomplete="off" required />
+            <button type="submit">Unlock →</button>
+          </div>
+          <span class="field-error" id="key-error"></span>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section class="surface" id="admin-content" style="display:none">
+    <div class="section-inner">
+      <div class="admin-grid fade-in">
+        <a href="/admin/board" class="admin-card">
+          <span class="admin-card-icon">👤</span>
+          <h2>Board Profiles</h2>
+          <p>Update member bios, titles, emails, and headshots.</p>
+          <span class="admin-card-link">Manage →</span>
+        </a>
+        <a href="/admin/events" class="admin-card">
+          <span class="admin-card-icon">📅</span>
+          <h2>Events</h2>
+          <p>Add, edit, or remove upcoming neighborhood events.</p>
+          <span class="admin-card-link">Manage →</span>
+        </a>
+      </div>
+
+      <div class="admin-footer fade-in">
+        <button id="logout-btn" class="logout-btn">Clear session</button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { getAdminKey, setAdminKey, clearAdminKey, adminFetch } from '../../lib/api';
+
+  async function tryUnlock(key: string): Promise<boolean> {
+    try {
+      setAdminKey(key);
+      const res = await adminFetch('/signups');
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function init() {
+    const stored = getAdminKey();
+    if (stored) {
+      const ok = await tryUnlock(stored);
+      if (ok) { showDashboard(); return; }
+      clearAdminKey();
+    }
+    showPrompt();
+  }
+
+  function showDashboard() {
+    document.getElementById('key-prompt')!.style.display = 'none';
+    document.getElementById('admin-content')!.style.display = '';
+    document.getElementById('admin-subtitle')!.textContent = 'Welcome back.';
+  }
+
+  function showPrompt() {
+    document.getElementById('key-prompt')!.style.display = '';
+    document.getElementById('admin-content')!.style.display = 'none';
+  }
+
+  document.getElementById('key-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('key-input') as HTMLInputElement;
+    const errorEl = document.getElementById('key-error')!;
+    const btn = (e.target as HTMLFormElement).querySelector('button')!;
+
+    btn.textContent = 'Checking…';
+    btn.setAttribute('disabled', '');
+
+    const ok = await tryUnlock(input.value.trim());
+
+    btn.textContent = 'Unlock →';
+    btn.removeAttribute('disabled');
+
+    if (ok) {
+      showDashboard();
+    } else {
+      clearAdminKey();
+      errorEl.textContent = 'Invalid key. Please try again.';
+      input.focus();
+    }
+  });
+
+  document.getElementById('logout-btn')!.addEventListener('click', () => {
+    clearAdminKey();
+    showPrompt();
+  });
+
+  init();
+</script>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+<style>
+  .login-wrap { max-width: 480px; }
+
+  .key-field {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+
+  .key-field input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: transparent;
+    outline: none;
+    color: var(--text-primary);
+  }
+
+  .key-field button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+
+  .key-field button:hover { opacity: 0.85; }
+  .key-field button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .field-error {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+    color: #b91c1c;
+    min-height: 1.2em;
+  }
+
+  .admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .admin-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 2rem 1.75rem;
+    background: white;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .admin-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .admin-card-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
+
+  .admin-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .admin-card p {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    flex: 1;
+  }
+
+  .admin-card-link {
+    font-size: 0.82rem;
+    color: var(--accent);
+    font-weight: 500;
+    margin-top: 0.5rem;
+  }
+
+  .admin-footer { padding-top: 1rem; border-top: 1px solid var(--border); }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.5rem 1.25rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .logout-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
+
+  @media (max-width: 640px) {
+    .admin-grid { grid-template-columns: 1fr; }
+  }
+</style>

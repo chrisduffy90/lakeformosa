@@ -1,0 +1,347 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Board Profiles — Admin | Lake Formosa NA">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <h1>Board Profiles</h1>
+      <p><a href="/admin" style="color:inherit;opacity:0.7;font-size:0.85rem">← Back to admin</a></p>
+    </div>
+  </div>
+
+  <section class="surface">
+    <div class="section-inner">
+      <div id="board-list" class="board-list fade-in">
+        <p class="loading-msg">Loading…</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-inner">
+      <div class="add-section fade-in">
+        <h2 class="section-heading">Add a board member</h2>
+        <form id="add-form" class="member-form" novalidate>
+          <div class="form-row-2">
+            <div class="form-field">
+              <label>Name *</label>
+              <input type="text" name="name" required />
+            </div>
+            <div class="form-field">
+              <label>Role / Title *</label>
+              <input type="text" name="role" placeholder="e.g. President" required />
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-field">
+              <label>Email</label>
+              <input type="email" name="email" />
+            </div>
+            <div class="form-field">
+              <label>Display Order *</label>
+              <input type="number" name="order" min="1" value="7" required />
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Headshot URL</label>
+            <input type="url" name="headshot_url" placeholder="https://…" />
+          </div>
+          <div class="form-field">
+            <label>Bio *</label>
+            <textarea name="bio" rows="4" required></textarea>
+          </div>
+          <span class="field-error" id="add-error"></span>
+          <button type="submit" id="add-btn">Add Member →</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { getAdminKey, adminFetch } from '../../lib/api';
+
+  type Member = {
+    id: string; name: string; role: string; order: number;
+    bio: string; email: string; headshot_url: string | null;
+  };
+
+  if (!getAdminKey()) window.location.href = '/admin';
+
+  async function loadBoard() {
+    const listEl = document.getElementById('board-list')!;
+    try {
+      const res = await adminFetch('/board-members');
+      const members = await res.json() as Member[];
+      if (!members.length) {
+        listEl.innerHTML = '<p class="loading-msg">No board members yet.</p>';
+        return;
+      }
+      listEl.innerHTML = members.map(m => `
+        <div class="member-row" data-id="${m.id}">
+          <div class="member-info">
+            <strong>${m.name}</strong>
+            <span class="member-role">${m.role}</span>
+            ${m.email ? `<span class="member-email">${m.email}</span>` : ''}
+          </div>
+          <div class="member-bio-preview">${m.bio.slice(0, 100)}…</div>
+          <div class="member-actions">
+            <button class="btn-edit" data-id="${m.id}">Edit</button>
+            <button class="btn-delete" data-id="${m.id}">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll<HTMLButtonElement>('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => openEdit(members.find(m => m.id === btn.dataset.id)!));
+      });
+
+      listEl.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteMember(btn.dataset.id!));
+      });
+    } catch {
+      listEl.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Failed to load board members.</p>';
+    }
+  }
+
+  async function deleteMember(id: string) {
+    if (!confirm('Delete this board member?')) return;
+    await adminFetch(`/board-members/${id}`, { method: 'DELETE' });
+    loadBoard();
+  }
+
+  function openEdit(m: Member) {
+    const existing = document.getElementById('edit-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'edit-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal">
+        <h2 class="modal-title">Edit Member</h2>
+        <form id="edit-form" class="member-form" novalidate>
+          <div class="form-row-2">
+            <div class="form-field">
+              <label>Name *</label>
+              <input type="text" name="name" value="${esc(m.name)}" required />
+            </div>
+            <div class="form-field">
+              <label>Role / Title *</label>
+              <input type="text" name="role" value="${esc(m.role)}" required />
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-field">
+              <label>Email</label>
+              <input type="email" name="email" value="${esc(m.email)}" />
+            </div>
+            <div class="form-field">
+              <label>Display Order *</label>
+              <input type="number" name="order" min="1" value="${m.order}" required />
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Headshot URL</label>
+            <input type="url" name="headshot_url" value="${esc(m.headshot_url ?? '')}" placeholder="https://…" />
+          </div>
+          <div class="form-field">
+            <label>Bio *</label>
+            <textarea name="bio" rows="4" required>${esc(m.bio)}</textarea>
+          </div>
+          <span class="field-error" id="edit-error"></span>
+          <div class="modal-actions">
+            <button type="button" id="cancel-edit" class="btn-cancel">Cancel</button>
+            <button type="submit">Save Changes →</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('cancel-edit')!.addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+    document.getElementById('edit-form')!.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target as HTMLFormElement);
+      const payload = {
+        name: fd.get('name'), role: fd.get('role'),
+        order: Number(fd.get('order')), email: fd.get('email') ?? '',
+        bio: fd.get('bio'), headshot_url: fd.get('headshot_url') || null,
+      };
+      const btn = (e.target as HTMLFormElement).querySelector<HTMLButtonElement>('[type=submit]')!;
+      btn.textContent = 'Saving…'; btn.disabled = true;
+      const res = await adminFetch(`/board-members/${m.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      if (res.ok) { modal.remove(); loadBoard(); }
+      else { document.getElementById('edit-error')!.textContent = 'Save failed. Try again.'; btn.textContent = 'Save Changes →'; btn.disabled = false; }
+    });
+  }
+
+  function esc(str: string) {
+    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('add-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target as HTMLFormElement);
+    const payload = {
+      name: fd.get('name'), role: fd.get('role'),
+      order: Number(fd.get('order')), email: fd.get('email') ?? '',
+      bio: fd.get('bio'), headshot_url: fd.get('headshot_url') || null,
+    };
+    const btn = document.getElementById('add-btn') as HTMLButtonElement;
+    const errEl = document.getElementById('add-error')!;
+    btn.textContent = 'Adding…'; btn.disabled = true;
+    const res = await adminFetch('/board-members', { method: 'POST', body: JSON.stringify(payload) });
+    if (res.ok) {
+      (e.target as HTMLFormElement).reset();
+      loadBoard();
+    } else {
+      errEl.textContent = 'Add failed. Try again.';
+    }
+    btn.textContent = 'Add Member →'; btn.disabled = false;
+  });
+
+  loadBoard();
+</script>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+<style>
+  .board-list { display: flex; flex-direction: column; gap: 1rem; }
+
+  .member-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    background: white;
+  }
+
+  .member-info { display: flex; flex-direction: column; gap: 0.2rem; }
+  .member-info strong { font-size: 0.95rem; color: var(--text-primary); }
+  .member-role { font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+  .member-email { font-size: 0.8rem; color: var(--text-secondary); }
+  .member-bio-preview { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+
+  .member-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+  .btn-edit, .btn-delete {
+    padding: 0.4rem 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  .btn-edit { background: none; border: 1px solid var(--border); color: var(--text-secondary); }
+  .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-delete { background: none; border: 1px solid #fca5a5; color: #b91c1c; }
+  .btn-delete:hover { background: #fef2f2; }
+
+  .add-section { max-width: 680px; }
+
+  .section-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+  }
+
+  .member-form { display: flex; flex-direction: column; gap: 1rem; }
+
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .form-field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .form-field label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .form-field input, .form-field textarea {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: white;
+    color: var(--text-primary);
+    outline: none;
+    resize: vertical;
+  }
+
+  .form-field input:focus, .form-field textarea:focus { border-color: var(--accent); }
+
+  .field-error { display: block; font-size: 0.82rem; color: #b91c1c; min-height: 1.2em; }
+
+  .member-form > button[type=submit] {
+    align-self: flex-start;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.4rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .member-form > button[type=submit]:hover { opacity: 0.85; }
+  .member-form > button[type=submit]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 1rem;
+  }
+
+  .modal {
+    background: white;
+    padding: 2rem 2.25rem;
+    width: 100%; max-width: 620px;
+    max-height: 90vh; overflow-y: auto;
+  }
+
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+  .btn-cancel {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.65rem 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .modal .member-form > button[type=submit] { margin: 0; }
+
+  .loading-msg { font-size: 0.9rem; color: var(--text-secondary); }
+
+  @media (max-width: 680px) {
+    .member-row { grid-template-columns: 1fr; }
+    .form-row-2 { grid-template-columns: 1fr; }
+  }
+</style>

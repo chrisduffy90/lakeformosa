@@ -1,17 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
-
-const allMembers = await getCollection('board');
-const sorted = allMembers.sort((a, b) => a.data.order - b.data.order);
-
-const officers = sorted.filter(m => m.data.role !== 'Member at Large');
-const members  = sorted.filter(m => m.data.role === 'Member at Large');
-
-function initials(name: string) {
-  if (name === 'Open Position') return '?';
-  return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
-}
 ---
 
 <BaseLayout title="Board | Lake Formosa Neighborhood Association">
@@ -39,21 +27,8 @@ function initials(name: string) {
   <section class="surface">
     <div class="section-inner">
       <div class="board-section-label fade-in">Officers</div>
-      <div class="officer-grid fade-in">
-        {officers.map(entry => (
-          <a href={`/board/${entry.id}`} class="officer-card">
-            <div class="officer-avatar">
-              {entry.data.headshot
-                ? <img src={entry.data.headshot} alt={entry.data.name} />
-                : <span>{initials(entry.data.name)}</span>
-              }
-            </div>
-            <div class="officer-role">{entry.data.role}</div>
-            <div class="officer-name">{entry.data.name}</div>
-            <p class="officer-bio">{entry.data.bio}</p>
-            <span class="officer-more">View bio →</span>
-          </a>
-        ))}
+      <div id="officer-grid" class="officer-grid fade-in">
+        <p class="loading-msg">Loading…</p>
       </div>
     </div>
   </section>
@@ -62,18 +37,8 @@ function initials(name: string) {
   <section>
     <div class="section-inner">
       <div class="board-section-label fade-in">Members at Large</div>
-      <div class="member-grid fade-in">
-        {members.map(entry => (
-          <a href={`/board/${entry.id}`} class="member-card">
-            <div class="member-avatar">
-              {entry.data.headshot
-                ? <img src={entry.data.headshot} alt={entry.data.name} />
-                : <span>{initials(entry.data.name)}</span>
-              }
-            </div>
-            <div class="member-name">{entry.data.name}</div>
-          </a>
-        ))}
+      <div id="member-grid" class="member-grid fade-in">
+        <p class="loading-msg">Loading…</p>
       </div>
     </div>
   </section>
@@ -96,7 +61,73 @@ function initials(name: string) {
   </section>
 </BaseLayout>
 
+<script>
+  import { apiFetch } from '../../lib/api';
+
+  type Member = { id: string; name: string; role: string; order: number; bio: string; email?: string; headshot_url?: string };
+
+  function initials(name: string) {
+    if (name === 'Open Position') return '?';
+    return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
+  }
+
+  function officerCard(m: Member) {
+    const avatar = m.headshot_url
+      ? `<img src="${m.headshot_url}" alt="${m.name}" />`
+      : `<span>${initials(m.name)}</span>`;
+    return `
+      <a href="/board/member?id=${m.id}" class="officer-card">
+        <div class="officer-avatar">${avatar}</div>
+        <div class="officer-role">${m.role}</div>
+        <div class="officer-name">${m.name}</div>
+        <p class="officer-bio">${m.bio}</p>
+        <span class="officer-more">View bio →</span>
+      </a>
+    `;
+  }
+
+  function memberCard(m: Member) {
+    const avatar = m.headshot_url
+      ? `<img src="${m.headshot_url}" alt="${m.name}" />`
+      : `<span>${initials(m.name)}</span>`;
+    return `
+      <a href="/board/member?id=${m.id}" class="member-card">
+        <div class="member-avatar">${avatar}</div>
+        <div class="member-name">${m.name}</div>
+      </a>
+    `;
+  }
+
+  async function loadBoard() {
+    const officerGrid = document.getElementById('officer-grid')!;
+    const memberGrid = document.getElementById('member-grid')!;
+    try {
+      const res = await apiFetch('/board-members');
+      const members = await res.json() as Member[];
+      const officers = members.filter(m => m.role !== 'Member at Large');
+      const atLarge = members.filter(m => m.role === 'Member at Large');
+      officerGrid.innerHTML = officers.length ? officers.map(officerCard).join('') : '<p class="loading-msg">No officers listed.</p>';
+      memberGrid.innerHTML = atLarge.length ? atLarge.map(memberCard).join('') : '<p class="loading-msg">No members at large listed.</p>';
+    } catch {
+      officerGrid.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Could not load board members.</p>';
+      memberGrid.innerHTML = '';
+    }
+  }
+
+  loadBoard();
+</script>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
 <style>
+  .loading-msg { font-size: 0.9rem; color: var(--text-secondary); }
+
   .board-section-label {
     font-size: 0.72rem;
     letter-spacing: 0.12em;
@@ -285,11 +316,3 @@ function initials(name: string) {
     .member-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
-
-<script is:inline>
-  const observer = new IntersectionObserver(
-    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-    { threshold: 0.15 }
-  );
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-</script>

@@ -2,6 +2,13 @@ import { neon } from '@neondatabase/serverless';
 
 export interface Env {
   DATABASE_URL: string;
+  RESEND_API_KEY: string;
+  ADMIN_KEY: string;
+  RATE_LIMITER: RateLimit;
+}
+
+interface RateLimit {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
 }
 
 const ALLOWED_ORIGINS = [
@@ -14,8 +21,8 @@ function corsHeaders(origin: string | null): HeadersInit {
   const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key',
   };
 }
 
@@ -30,6 +37,15 @@ function isValidEmail(v: unknown): v is string {
   return typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
+function isAdmin(request: Request, env: Env): boolean {
+  return request.headers.get('X-Admin-Key') === env.ADMIN_KEY;
+}
+
+function requireAdmin(request: Request, env: Env, origin: string | null): Response | null {
+  if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
+  return null;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin');
@@ -42,10 +58,133 @@ export default {
     const sql = neon(env.DATABASE_URL);
 
     try {
-      // GET /  GET /health
+      // GET / or /health
       if (pathname === '/' || pathname === '/health') {
         return json({ ok: true, message: 'Lake Formosa Neighborhood Association API' }, 200, origin);
       }
+
+      // Rate limit all POST/PUT/DELETE endpoints (enforced on Workers Paid plan only; no-op on free)
+      if (request.method === 'POST' || request.method === 'PUT' || request.method === 'DELETE') {
+        const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+        const { success } = await env.RATE_LIMITER.limit({ key: ip });
+        if (!success) return json({ error: 'Too many requests. Please try again later.' }, 429, origin);
+      }
+
+      // ── BOARD MEMBERS ─────────────────────────────────────────────────────────
+
+      // GET /board-members — public
+      if (pathname === '/board-members' && request.method === 'GET') {
+        const rows = await sql`SELECT * FROM board_members ORDER BY "order"`;
+        return json(rows, 200, origin);
+      }
+
+      // GET /board-members/:id — public
+      const memberMatch = pathname.match(/^\/board-members\/([^/]+)$/);
+      if (memberMatch && request.method === 'GET') {
+        const rows = await sql`SELECT * FROM board_members WHERE id = ${memberMatch[1]}`;
+        if (!rows.length) return json({ error: 'Not found' }, 404, origin);
+        return json(rows[0], 200, origin);
+      }
+
+      // POST /board-members — admin
+      if (pathname === '/board-members' && request.method === 'POST') {
+        const deny = requireAdmin(request, env, origin);
+        if (deny) return deny;
+        const data = await request.json() as Record<string, unknown>;
+        const rows = await sql`
+          INSERT INTO board_members (name, role, "order", bio, email, headshot_url)
+          VALUES (
+            ${data.name}, ${data.role}, ${data.order ?? 99},
+            ${data.bio ?? ''}, ${data.email ?? ''}, ${data.headshot_url ?? null}
+          ) RETURNING *`;
+        return json(rows[0], 201, origin);
+      }
+
+      // PUT /board-members/:id — admin
+      if (memberMatch && request.method === 'PUT') {
+        const deny = requireAdmin(request, env, origin);
+        if (deny) return deny;
+        const data = await request.json() as Record<string, unknown>;
+        const rows = await sql`
+          UPDATE board_members SET
+            name        = ${data.name},
+            role        = ${data.role},
+            "order"     = ${data.order ?? 99},
+            bio         = ${data.bio ?? ''},
+            email       = ${data.email ?? ''},
+            headshot_url = ${data.headshot_url ?? null}
+          WHERE id = ${memberMatch[1]}
+          RETURNING *`;
+        if (!rows.length) return json({ error: 'Not found' }, 404, origin);
+        return json(rows[0], 200, origin);
+      }
+
+      // DELETE /board-members/:id — admin
+      if (memberMatch && request.method === 'DELETE') {
+        const deny = requireAdmin(request, env, origin);
+        if (deny) return deny;
+        await sql`DELETE FROM board_members WHERE id = ${memberMatch[1]}`;
+        return json({ ok: true }, 200, origin);
+      }
+
+      // ── EVENTS ────────────────────────────────────────────────────────────────
+
+      // GET /events — public (upcoming) or all with ?all=1 for admin
+      if (pathname === '/events' && request.method === 'GET') {
+        const showAll = new URL(request.url).searchParams.get('all') === '1';
+        const rows = showAll
+          ? await sql`SELECT * FROM events ORDER BY date`
+          : await sql`SELECT * FROM events WHERE date >= CURRENT_DATE ORDER BY date`;
+        return json(rows, 200, origin);
+      }
+
+      // GET /events/:id — public
+      const eventMatch = pathname.match(/^\/events\/([^/]+)$/);
+      if (eventMatch && request.method === 'GET') {
+        const rows = await sql`SELECT * FROM events WHERE id = ${eventMatch[1]}`;
+        if (!rows.length) return json({ error: 'Not found' }, 404, origin);
+        return json(rows[0], 200, origin);
+      }
+
+      // POST /events — admin
+      if (pathname === '/events' && request.method === 'POST') {
+        const deny = requireAdmin(request, env, origin);
+        if (deny) return deny;
+        const data = await request.json() as Record<string, unknown>;
+        const rows = await sql`
+          INSERT INTO events (title, date, time, location, description)
+          VALUES (${data.title}, ${data.date}, ${data.time}, ${data.location}, ${data.description ?? ''})
+          RETURNING *`;
+        return json(rows[0], 201, origin);
+      }
+
+      // PUT /events/:id — admin
+      if (eventMatch && request.method === 'PUT') {
+        const deny = requireAdmin(request, env, origin);
+        if (deny) return deny;
+        const data = await request.json() as Record<string, unknown>;
+        const rows = await sql`
+          UPDATE events SET
+            title       = ${data.title},
+            date        = ${data.date},
+            time        = ${data.time},
+            location    = ${data.location},
+            description = ${data.description ?? ''}
+          WHERE id = ${eventMatch[1]}
+          RETURNING *`;
+        if (!rows.length) return json({ error: 'Not found' }, 404, origin);
+        return json(rows[0], 200, origin);
+      }
+
+      // DELETE /events/:id — admin
+      if (eventMatch && request.method === 'DELETE') {
+        const deny = requireAdmin(request, env, origin);
+        if (deny) return deny;
+        await sql`DELETE FROM events WHERE id = ${eventMatch[1]}`;
+        return json({ ok: true }, 200, origin);
+      }
+
+      // ── SIGNUPS / GET-INVOLVED / CONTACT ──────────────────────────────────────
 
       // POST /signup
       if (pathname === '/signup' && request.method === 'POST') {
@@ -70,8 +209,9 @@ export default {
         }
       }
 
-      // GET /signups
+      // GET /signups — admin only
       if (pathname === '/signups' && request.method === 'GET') {
+        if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
         const rows = await sql`SELECT * FROM signups ORDER BY created_at DESC`;
         return json(rows, 200, origin);
       }
@@ -99,8 +239,9 @@ export default {
         return json({ ok: true, data: rows[0] }, 200, origin);
       }
 
-      // GET /get-involved
+      // GET /get-involved — admin only
       if (pathname === '/get-involved' && request.method === 'GET') {
+        if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
         const rows = await sql`SELECT * FROM get_involved ORDER BY created_at DESC`;
         return json(rows, 200, origin);
       }
@@ -119,11 +260,28 @@ export default {
           VALUES (${name.trim()}, ${email.trim().toLowerCase()}, ${subject.trim()}, ${message.trim()})
           RETURNING *
         `;
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'LFNA Contact Form <onboarding@resend.dev>',
+            to: ['lakeformosanaorl@gmail.com', 'chrisduffy90@gmail.com'],
+            reply_to: email.trim().toLowerCase(),
+            subject: `New contact: ${subject.trim()}`,
+            text: `Name: ${name.trim()}\nEmail: ${email.trim()}\nSubject: ${subject.trim()}\n\n${message.trim()}`,
+          }),
+        });
+
         return json({ ok: true, data: rows[0] }, 200, origin);
       }
 
-      // GET /contact
+      // GET /contact — admin only
       if (pathname === '/contact' && request.method === 'GET') {
+        if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401, origin);
         const rows = await sql`SELECT * FROM contact_messages ORDER BY created_at DESC`;
         return json(rows, 200, origin);
       }

@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Board Member | Lake Formosa Neighborhood Association">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <a href="/board" class="back-link">← Board of Directors</a>
+    </div>
+  </div>
+
+  <section class="surface">
+    <div class="section-inner">
+      <div id="bio-content" class="bio-layout fade-in" style="display:none">
+        <div class="bio-avatar-col">
+          <div class="bio-avatar" id="bio-avatar">
+            <span id="bio-initials"></span>
+          </div>
+        </div>
+        <div class="bio-info">
+          <div class="bio-role" id="bio-role"></div>
+          <h1 class="bio-name" id="bio-name"></h1>
+          <p class="bio-body" id="bio-body"></p>
+          <a id="bio-email" href="#" class="bio-email" style="display:none"></a>
+          <div class="bio-footer">
+            <a href="/board" class="text-link">← Back to the board</a>
+          </div>
+        </div>
+      </div>
+      <p id="bio-error" style="display:none;color:#b91c1c;font-size:0.9rem">Member not found. <a href="/board">Return to the board page.</a></p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { apiFetch } from '../../lib/api';
+
+  function initials(name: string) {
+    if (name === 'Open Position') return '?';
+    return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
+  }
+
+  async function load() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id) { showError(); return; }
+
+    try {
+      const res = await apiFetch(`/board-members/${id}`);
+      if (!res.ok) { showError(); return; }
+      const data = await res.json() as Record<string, string>;
+
+      document.title = `${data.name} | Lake Formosa Neighborhood Association`;
+
+      const avatarEl = document.getElementById('bio-avatar')!;
+      if (data.headshot_url) {
+        avatarEl.innerHTML = `<img src="${data.headshot_url}" alt="${data.name}" />`;
+      } else {
+        document.getElementById('bio-initials')!.textContent = initials(data.name);
+      }
+
+      document.getElementById('bio-role')!.textContent = data.role;
+      document.getElementById('bio-name')!.textContent = data.name;
+      document.getElementById('bio-body')!.textContent = data.bio;
+
+      if (data.email) {
+        const emailEl = document.getElementById('bio-email') as HTMLAnchorElement;
+        emailEl.href = `mailto:${data.email}`;
+        emailEl.textContent = data.email;
+        emailEl.style.display = '';
+      }
+
+      document.getElementById('bio-content')!.style.display = '';
+    } catch {
+      showError();
+    }
+  }
+
+  function showError() {
+    document.getElementById('bio-error')!.style.display = '';
+  }
+
+  load();
+</script>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+<style>
+  .back-link {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--text-primary); }
+
+  .page-hero-inner { padding-bottom: 2rem; }
+
+  .bio-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .bio-avatar-col { padding-top: 0.25rem; }
+
+  .bio-avatar {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .bio-avatar span {
+    font-family: 'DM Serif Display', serif;
+    font-size: 3rem;
+    color: #fff;
+    letter-spacing: 0.02em;
+  }
+
+  .bio-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .bio-role {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .bio-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+  }
+
+  .bio-body {
+    font-size: 0.97rem;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    margin-bottom: 1.5rem;
+    max-width: 560px;
+  }
+
+  .bio-email {
+    display: inline-block;
+    font-size: 0.875rem;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-bottom: 2.5rem;
+  }
+
+  .bio-footer { border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1rem; }
+
+  @media (max-width: 640px) {
+    .bio-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    .bio-avatar { width: 110px; height: 110px; }
+    .bio-avatar span { font-size: 2rem; }
+    .bio-name { font-size: 1.7rem; }
+  }
+</style>
