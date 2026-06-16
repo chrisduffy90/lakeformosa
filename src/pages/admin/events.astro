@@ -12,6 +12,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <section class="surface">
     <div class="section-inner">
+      <div class="list-header fade-in">
+        <span class="list-label">Scheduled events</span>
+        <label class="toggle-past">
+          <input type="checkbox" id="show-past" />
+          Show past events
+        </label>
+      </div>
       <div id="events-list" class="events-list fade-in">
         <p class="loading-msg">Loading…</p>
       </div>
@@ -51,57 +58,127 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </div>
   </section>
+
+  <!-- Edit modal (in DOM, toggled via display) -->
+  <div id="edit-modal" class="modal-overlay" style="display:none" role="dialog">
+    <div class="modal">
+      <h2 class="modal-title">Edit Event</h2>
+      <form id="edit-form" class="event-form" novalidate>
+        <div class="form-field">
+          <label>Title *</label>
+          <input type="text" name="title" required />
+        </div>
+        <div class="form-row-3">
+          <div class="form-field">
+            <label>Date *</label>
+            <input type="date" name="date" required />
+          </div>
+          <div class="form-field">
+            <label>Time *</label>
+            <input type="text" name="time" required />
+          </div>
+          <div class="form-field">
+            <label>Location *</label>
+            <input type="text" name="location" required />
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Description *</label>
+          <textarea name="description" rows="3" required></textarea>
+        </div>
+        <span class="field-error" id="edit-error"></span>
+        <div class="modal-actions">
+          <button type="button" id="cancel-edit" class="btn-cancel">Cancel</button>
+          <button type="submit" id="edit-save-btn">Save Changes →</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </BaseLayout>
 
 <script>
-  import { getSessionId, clearSession, adminFetch } from '../../lib/api';
+  import { getSessionId, adminFetch } from '../../lib/api';
 
   type Evt = { id: string; title: string; date: string; time: string; location: string; description: string };
 
   if (!getSessionId()) window.location.href = '/admin';
 
+  const modal = document.getElementById('edit-modal')!;
+  const editForm = document.getElementById('edit-form') as HTMLFormElement;
+  let editingId: string | null = null;
+  let allEvents: Evt[] = [];
+
   function fmtDate(d: string) {
-    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function fmtMonth(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  }
+
+  function fmtDay(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { day: 'numeric' });
   }
 
   function esc(str: string) {
     return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  async function loadEvents() {
+  function renderEvents(events: Evt[], showPast: boolean) {
     const listEl = document.getElementById('events-list')!;
-    try {
-      const res = await adminFetch('/events?all=1');
-      const events = await res.json() as Evt[];
-      if (!events.length) {
-        listEl.innerHTML = '<p class="loading-msg">No events yet.</p>';
-        return;
-      }
-      const today = new Date().toISOString().slice(0, 10);
-      listEl.innerHTML = events.map(ev => `
-        <div class="event-row ${ev.date < today ? 'past' : ''}" data-id="${ev.id}">
-          <div class="event-info">
-            <strong>${esc(ev.title)}</strong>
-            <span class="event-meta">${fmtDate(ev.date)} · ${esc(ev.time)} · ${esc(ev.location)}</span>
+    const today = new Date().toISOString().slice(0, 10);
+    const visible = showPast ? events : events.filter(e => e.date >= today);
+
+    if (!visible.length) {
+      listEl.innerHTML = `<p class="empty-msg">${showPast ? 'No events yet.' : 'No upcoming events. Add one below or show past events.'}</p>`;
+      return;
+    }
+
+    listEl.innerHTML = visible.map(ev => {
+      const isPast = ev.date < today;
+      return `
+        <div class="event-card${isPast ? ' past' : ''}">
+          <div class="event-date-block">
+            <div class="event-month">${fmtMonth(ev.date)}</div>
+            <div class="event-day">${fmtDay(ev.date)}</div>
+          </div>
+          <div class="event-body">
+            <div class="event-title">${esc(ev.title)}${isPast ? ' <span class="past-tag">Past</span>' : ''}</div>
+            <div class="event-meta">${esc(ev.time)} &middot; ${esc(ev.location)}</div>
+            <div class="event-desc">${esc(ev.description)}</div>
           </div>
           <div class="event-actions">
             <button class="btn-edit" data-id="${ev.id}">Edit</button>
             <button class="btn-delete" data-id="${ev.id}">Delete</button>
           </div>
         </div>
-      `).join('');
+      `;
+    }).join('');
 
-      listEl.querySelectorAll<HTMLButtonElement>('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => openEdit(events.find(e => e.id === btn.dataset.id)!));
-      });
+    listEl.querySelectorAll<HTMLButtonElement>('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', () => openEdit(allEvents.find(e => e.id === btn.dataset.id)!));
+    });
+    listEl.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', () => deleteEvent(btn.dataset.id!));
+    });
+  }
 
-      listEl.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', () => deleteEvent(btn.dataset.id!));
-      });
+  async function loadEvents() {
+    const listEl = document.getElementById('events-list')!;
+    listEl.innerHTML = '<p class="loading-msg">Loading…</p>';
+    try {
+      const res = await adminFetch('/events?all=1');
+      allEvents = await res.json() as Evt[];
+      const showPast = (document.getElementById('show-past') as HTMLInputElement).checked;
+      renderEvents(allEvents, showPast);
     } catch {
       listEl.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Failed to load events.</p>';
     }
   }
+
+  document.getElementById('show-past')!.addEventListener('change', (e) => {
+    renderEvents(allEvents, (e.target as HTMLInputElement).checked);
+  });
 
   async function deleteEvent(id: string) {
     if (!confirm('Delete this event?')) return;
@@ -110,65 +187,41 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   function openEdit(ev: Evt) {
-    const existing = document.getElementById('edit-modal');
-    if (existing) existing.remove();
-
-    const modal = document.createElement('div');
-    modal.id = 'edit-modal';
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-      <div class="modal">
-        <h2 class="modal-title">Edit Event</h2>
-        <form id="edit-form" class="event-form" novalidate>
-          <div class="form-field">
-            <label>Title *</label>
-            <input type="text" name="title" value="${esc(ev.title)}" required />
-          </div>
-          <div class="form-row-3">
-            <div class="form-field">
-              <label>Date *</label>
-              <input type="date" name="date" value="${ev.date}" required />
-            </div>
-            <div class="form-field">
-              <label>Time *</label>
-              <input type="text" name="time" value="${esc(ev.time)}" required />
-            </div>
-            <div class="form-field">
-              <label>Location *</label>
-              <input type="text" name="location" value="${esc(ev.location)}" required />
-            </div>
-          </div>
-          <div class="form-field">
-            <label>Description *</label>
-            <textarea name="description" rows="3" required>${esc(ev.description)}</textarea>
-          </div>
-          <span class="field-error" id="edit-error"></span>
-          <div class="modal-actions">
-            <button type="button" id="cancel-edit" class="btn-cancel">Cancel</button>
-            <button type="submit">Save Changes →</button>
-          </div>
-        </form>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    document.getElementById('cancel-edit')!.addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-
-    document.getElementById('edit-form')!.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target as HTMLFormElement);
-      const payload = {
-        title: fd.get('title'), date: fd.get('date'), time: fd.get('time'),
-        location: fd.get('location'), description: fd.get('description') ?? '',
-      };
-      const btn = (e.target as HTMLFormElement).querySelector<HTMLButtonElement>('[type=submit]')!;
-      btn.textContent = 'Saving…'; btn.disabled = true;
-      const res = await adminFetch(`/events/${ev.id}`, { method: 'PUT', body: JSON.stringify(payload) });
-      if (res.ok) { modal.remove(); loadEvents(); }
-      else { document.getElementById('edit-error')!.textContent = 'Save failed. Try again.'; btn.textContent = 'Save Changes →'; btn.disabled = false; }
-    });
+    editingId = ev.id;
+    (editForm.elements.namedItem('title') as HTMLInputElement).value = ev.title;
+    (editForm.elements.namedItem('date') as HTMLInputElement).value = ev.date;
+    (editForm.elements.namedItem('time') as HTMLInputElement).value = ev.time;
+    (editForm.elements.namedItem('location') as HTMLInputElement).value = ev.location;
+    (editForm.elements.namedItem('description') as HTMLTextAreaElement).value = ev.description;
+    document.getElementById('edit-error')!.textContent = '';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    editingId = null;
+  }
+
+  document.getElementById('cancel-edit')!.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!editingId) return;
+    const fd = new FormData(editForm);
+    const payload = {
+      title: fd.get('title'), date: fd.get('date'), time: fd.get('time'),
+      location: fd.get('location'), description: fd.get('description') ?? '',
+    };
+    const btn = document.getElementById('edit-save-btn') as HTMLButtonElement;
+    btn.textContent = 'Saving…'; btn.disabled = true;
+    const res = await adminFetch(`/events/${editingId}`, { method: 'PUT', body: JSON.stringify(payload) });
+    if (res.ok) { closeModal(); loadEvents(); }
+    else { document.getElementById('edit-error')!.textContent = 'Save failed. Try again.'; }
+    btn.textContent = 'Save Changes →'; btn.disabled = false;
+  });
 
   document.getElementById('add-form')!.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -198,90 +251,127 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </script>
 
 <style>
-  .events-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
-  .event-row {
+  .list-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .list-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .toggle-past {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .events-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .event-card {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 1.25rem;
+    align-items: start;
+    padding: 1.1rem 1.25rem;
     border: 1px solid var(--border);
     background: white;
+    transition: border-color 0.15s;
+  }
+  .event-card:hover { border-color: var(--accent); }
+  .event-card.past { opacity: 0.5; }
+
+  .event-date-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--accent-light, #f0f4ff);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .event-month { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; font-weight: 600; }
+  .event-day { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--text-primary); line-height: 1.1; }
+
+  .event-body { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+  .event-title { font-size: 0.92rem; font-weight: 500; color: var(--text-primary); }
+  .event-meta { font-size: 0.78rem; color: var(--accent); }
+  .event-desc { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.55; margin-top: 0.2rem; }
+
+  .past-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    background: var(--border);
+    color: var(--text-secondary);
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    vertical-align: middle;
+    margin-left: 0.4rem;
   }
 
-  .event-row.past { opacity: 0.55; }
-
-  .event-info { display: flex; flex-direction: column; gap: 0.25rem; }
-  .event-info strong { font-size: 0.95rem; color: var(--text-primary); }
-  .event-meta { font-size: 0.8rem; color: var(--text-secondary); }
-
-  .event-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+  .event-actions { display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0; }
 
   .btn-edit, .btn-delete {
-    padding: 0.4rem 0.9rem;
+    padding: 0.35rem 0.8rem;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     cursor: pointer;
     border-radius: 2px;
+    white-space: nowrap;
   }
-
   .btn-edit { background: none; border: 1px solid var(--border); color: var(--text-secondary); }
   .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
   .btn-delete { background: none; border: 1px solid #fca5a5; color: #b91c1c; }
   .btn-delete:hover { background: #fef2f2; }
 
+  .empty-msg, .loading-msg { font-size: 0.9rem; color: var(--text-secondary); padding: 1rem 0; }
+
+  /* Add form */
   .add-section { max-width: 680px; }
 
   .section-heading {
     font-family: 'DM Serif Display', serif;
-    font-size: 1.4rem;
-    font-weight: 400;
-    margin-bottom: 1.5rem;
+    font-size: 1.4rem; font-weight: 400; margin-bottom: 1.5rem;
   }
 
   .event-form { display: flex; flex-direction: column; gap: 1rem; }
-
   .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 1rem; }
 
   .form-field { display: flex; flex-direction: column; gap: 0.35rem; }
-
   .form-field label {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 0.75rem; font-weight: 500; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.06em;
   }
-
   .form-field input, .form-field textarea {
     padding: 0.65rem 0.85rem;
     border: 1px solid var(--border);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    background: white;
-    color: var(--text-primary);
-    outline: none;
-    resize: vertical;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    background: white; color: var(--text-primary);
+    outline: none; resize: vertical;
+    transition: border-color 0.15s;
   }
-
   .form-field input:focus, .form-field textarea:focus { border-color: var(--accent); }
 
   .field-error { display: block; font-size: 0.82rem; color: #b91c1c; min-height: 1.2em; }
 
   .event-form > button[type=submit] {
     align-self: flex-start;
-    background: var(--accent);
-    color: #fff;
-    border: none;
+    background: var(--accent); color: #fff; border: none;
     padding: 0.7rem 1.4rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+    cursor: pointer; transition: opacity 0.2s;
   }
-
   .event-form > button[type=submit]:hover { opacity: 0.85; }
   .event-form > button[type=submit]:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -292,36 +382,25 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     display: flex; align-items: center; justify-content: center;
     z-index: 1000; padding: 1rem;
   }
-
   .modal {
-    background: white;
-    padding: 2rem 2.25rem;
-    width: 100%; max-width: 620px;
+    background: white; padding: 2rem 2.25rem;
+    width: 100%; max-width: 580px;
     max-height: 90vh; overflow-y: auto;
   }
-
   .modal-title {
     font-family: 'DM Serif Display', serif;
-    font-size: 1.4rem;
-    font-weight: 400;
-    margin-bottom: 1.5rem;
+    font-size: 1.4rem; font-weight: 400; margin-bottom: 1.5rem;
   }
-
   .modal-actions { display: flex; gap: 0.75rem; align-items: center; }
-
   .btn-cancel {
     background: none; border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 0.65rem 1.1rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    cursor: pointer;
+    color: var(--text-secondary); padding: 0.65rem 1.1rem;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer;
   }
 
-  .loading-msg { font-size: 0.9rem; color: var(--text-secondary); }
-
-  @media (max-width: 680px) {
-    .event-row { flex-direction: column; align-items: flex-start; }
+  @media (max-width: 600px) {
+    .event-card { grid-template-columns: 48px 1fr; }
+    .event-actions { flex-direction: row; grid-column: 1 / -1; }
     .form-row-3 { grid-template-columns: 1fr; }
   }
 </style>

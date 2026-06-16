@@ -5,6 +5,7 @@ export interface Env {
   RESEND_API_KEY: string;
   ADMIN_KEY: string;
   RATE_LIMITER: RateLimit;
+  PHOTOS: R2Bucket;
 }
 
 interface RateLimit {
@@ -184,6 +185,41 @@ export default {
         const email = decodeURIComponent(adminUserMatch[1]);
         await sql`DELETE FROM admin_users WHERE email = ${email}`;
         return json({ ok: true }, 200, origin);
+      }
+
+      // ── PHOTOS ────────────────────────────────────────────────────────────────
+
+      // POST /upload-photo — admin only, stores in R2
+      if (pathname === '/upload-photo' && request.method === 'POST') {
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
+        const formData = await request.formData();
+        const file = formData.get('file') as File | null;
+        if (!file) return json({ error: 'No file provided' }, 400, origin);
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!ALLOWED_TYPES.includes(file.type))
+          return json({ error: 'Only JPEG, PNG, WebP, or GIF images are allowed' }, 400, origin);
+        if (file.size > 5 * 1024 * 1024)
+          return json({ error: 'File must be under 5MB' }, 400, origin);
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const key = `headshots/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        await env.PHOTOS.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
+        const photoUrl = `${new URL(request.url).origin}/photos/${key}`;
+        return json({ url: photoUrl }, 200, origin);
+      }
+
+      // GET /photos/:key — serve from R2 (public)
+      if (pathname.startsWith('/photos/') && request.method === 'GET') {
+        const key = pathname.slice('/photos/'.length);
+        const object = await env.PHOTOS.get(key);
+        if (!object) return new Response('Not found', { status: 404 });
+        return new Response(object.body, {
+          headers: {
+            'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+            'Cache-Control': 'public, max-age=31536000',
+            ...corsHeaders(origin),
+          },
+        });
       }
 
       // ── BOARD MEMBERS ─────────────────────────────────────────────────────────

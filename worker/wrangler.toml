@@ -2,6 +2,10 @@ name = "lakeformosa-api"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "lakeformosa-photos"
+
 [[unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"

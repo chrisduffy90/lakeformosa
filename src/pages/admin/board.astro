@@ -44,8 +44,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             </div>
           </div>
           <div class="form-field">
-            <label>Headshot URL</label>
-            <input type="url" name="headshot_url" placeholder="https://…" />
+            <label>Photo</label>
+            <div class="photo-upload-wrap">
+              <div class="photo-preview" id="add-preview" style="display:none">
+                <img id="add-preview-img" src="" alt="Preview" />
+                <button type="button" class="remove-photo" id="add-remove-photo">✕</button>
+              </div>
+              <label class="upload-btn" id="add-upload-label">
+                <input type="file" id="add-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none" />
+                <span id="add-upload-text">Choose photo…</span>
+              </label>
+              <input type="hidden" name="headshot_url" id="add-headshot-url" value="" />
+              <span class="upload-hint">JPEG, PNG, or WebP · max 5MB</span>
+            </div>
           </div>
           <div class="form-field">
             <label>Bio *</label>
@@ -57,10 +68,63 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </div>
   </section>
+
+  <!-- Edit modal -->
+  <div id="edit-modal" class="modal-overlay" style="display:none" role="dialog">
+    <div class="modal">
+      <h2 class="modal-title">Edit Member</h2>
+      <form id="edit-form" class="member-form" novalidate>
+        <div class="form-row-2">
+          <div class="form-field">
+            <label>Name *</label>
+            <input type="text" name="name" required />
+          </div>
+          <div class="form-field">
+            <label>Role / Title *</label>
+            <input type="text" name="role" required />
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-field">
+            <label>Email</label>
+            <input type="email" name="email" />
+          </div>
+          <div class="form-field">
+            <label>Display Order *</label>
+            <input type="number" name="order" min="1" required />
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Photo</label>
+          <div class="photo-upload-wrap">
+            <div class="photo-preview" id="edit-preview">
+              <img id="edit-preview-img" src="" alt="Preview" />
+              <button type="button" class="remove-photo" id="edit-remove-photo">✕</button>
+            </div>
+            <label class="upload-btn" id="edit-upload-label">
+              <input type="file" id="edit-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none" />
+              <span id="edit-upload-text">Replace photo…</span>
+            </label>
+            <input type="hidden" name="headshot_url" id="edit-headshot-url" value="" />
+            <span class="upload-hint">JPEG, PNG, or WebP · max 5MB</span>
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Bio *</label>
+          <textarea name="bio" rows="4" required></textarea>
+        </div>
+        <span class="field-error" id="edit-error"></span>
+        <div class="modal-actions">
+          <button type="button" id="cancel-edit" class="btn-cancel">Cancel</button>
+          <button type="submit" id="edit-save-btn">Save Changes →</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </BaseLayout>
 
 <script>
-  import { getSessionId, clearSession, adminFetch } from '../../lib/api';
+  import { getSessionId, adminFetch } from '../../lib/api';
 
   type Member = {
     id: string; name: string; role: string; order: number;
@@ -69,23 +133,82 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   if (!getSessionId()) window.location.href = '/admin';
 
+  // ── Photo upload helper ────────────────────────────────────────────────────
+  async function uploadPhoto(file: File, uploadTextEl: HTMLElement): Promise<string | null> {
+    uploadTextEl.textContent = 'Uploading…';
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await adminFetch('/upload-photo', { method: 'POST', body: fd });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        uploadTextEl.textContent = data.error ?? 'Upload failed';
+        return null;
+      }
+      return data.url;
+    } catch {
+      uploadTextEl.textContent = 'Upload failed';
+      return null;
+    }
+  }
+
+  function wirePhotoUpload(
+    inputId: string, previewId: string, previewImgId: string,
+    removeBtnId: string, uploadTextId: string, hiddenId: string,
+  ) {
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    const preview = document.getElementById(previewId)!;
+    const previewImg = document.getElementById(previewImgId) as HTMLImageElement;
+    const removeBtn = document.getElementById(removeBtnId)!;
+    const uploadText = document.getElementById(uploadTextId)!;
+    const hidden = document.getElementById(hiddenId) as HTMLInputElement;
+
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const url = await uploadPhoto(file, uploadText);
+      if (url) {
+        hidden.value = url;
+        previewImg.src = url;
+        preview.style.display = '';
+        uploadText.textContent = 'Replace photo…';
+        input.value = '';
+      }
+    });
+
+    removeBtn.addEventListener('click', () => {
+      hidden.value = '';
+      previewImg.src = '';
+      preview.style.display = 'none';
+      uploadText.textContent = 'Choose photo…';
+    });
+  }
+
+  wirePhotoUpload('add-photo-input', 'add-preview', 'add-preview-img', 'add-remove-photo', 'add-upload-text', 'add-headshot-url');
+
+  // ── Board list ─────────────────────────────────────────────────────────────
+  let currentMembers: Member[] = [];
+
   async function loadBoard() {
     const listEl = document.getElementById('board-list')!;
     try {
       const res = await adminFetch('/board-members');
-      const members = await res.json() as Member[];
-      if (!members.length) {
+      currentMembers = await res.json() as Member[];
+      if (!currentMembers.length) {
         listEl.innerHTML = '<p class="loading-msg">No board members yet.</p>';
         return;
       }
-      listEl.innerHTML = members.map(m => `
-        <div class="member-row" data-id="${m.id}">
-          <div class="member-info">
-            <strong>${m.name}</strong>
-            <span class="member-role">${m.role}</span>
-            ${m.email ? `<span class="member-email">${m.email}</span>` : ''}
+      listEl.innerHTML = currentMembers.map(m => `
+        <div class="member-row">
+          <div class="member-avatar">
+            ${m.headshot_url
+              ? `<img src="${m.headshot_url}" alt="${esc(m.name)}" />`
+              : `<span>${initials(m.name)}</span>`}
           </div>
-          <div class="member-bio-preview">${m.bio.slice(0, 100)}…</div>
+          <div class="member-info">
+            <strong>${esc(m.name)}</strong>
+            <span class="member-role">${esc(m.role)}</span>
+          </div>
           <div class="member-actions">
             <button class="btn-edit" data-id="${m.id}">Edit</button>
             <button class="btn-delete" data-id="${m.id}">Delete</button>
@@ -94,9 +217,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       `).join('');
 
       listEl.querySelectorAll<HTMLButtonElement>('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => openEdit(members.find(m => m.id === btn.dataset.id)!));
+        btn.addEventListener('click', () => openEdit(currentMembers.find(m => m.id === btn.dataset.id)!));
       });
-
       listEl.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
         btn.addEventListener('click', () => deleteMember(btn.dataset.id!));
       });
@@ -111,85 +233,81 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     loadBoard();
   }
 
+  function initials(name: string) {
+    return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  }
+
+  // ── Edit modal ─────────────────────────────────────────────────────────────
+  let editingId: string | null = null;
+
+  const modal = document.getElementById('edit-modal')!;
+  const editForm = document.getElementById('edit-form') as HTMLFormElement;
+
+  wirePhotoUpload('edit-photo-input', 'edit-preview', 'edit-preview-img', 'edit-remove-photo', 'edit-upload-text', 'edit-headshot-url');
+
   function openEdit(m: Member) {
-    const existing = document.getElementById('edit-modal');
-    if (existing) existing.remove();
+    editingId = m.id;
+    (editForm.elements.namedItem('name') as HTMLInputElement).value = m.name;
+    (editForm.elements.namedItem('role') as HTMLInputElement).value = m.role;
+    (editForm.elements.namedItem('email') as HTMLInputElement).value = m.email ?? '';
+    (editForm.elements.namedItem('order') as HTMLInputElement).value = String(m.order);
+    (editForm.elements.namedItem('bio') as HTMLTextAreaElement).value = m.bio;
 
-    const modal = document.createElement('div');
-    modal.id = 'edit-modal';
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-      <div class="modal">
-        <h2 class="modal-title">Edit Member</h2>
-        <form id="edit-form" class="member-form" novalidate>
-          <div class="form-row-2">
-            <div class="form-field">
-              <label>Name *</label>
-              <input type="text" name="name" value="${esc(m.name)}" required />
-            </div>
-            <div class="form-field">
-              <label>Role / Title *</label>
-              <input type="text" name="role" value="${esc(m.role)}" required />
-            </div>
-          </div>
-          <div class="form-row-2">
-            <div class="form-field">
-              <label>Email</label>
-              <input type="email" name="email" value="${esc(m.email)}" />
-            </div>
-            <div class="form-field">
-              <label>Display Order *</label>
-              <input type="number" name="order" min="1" value="${m.order}" required />
-            </div>
-          </div>
-          <div class="form-field">
-            <label>Headshot URL</label>
-            <input type="url" name="headshot_url" value="${esc(m.headshot_url ?? '')}" placeholder="https://…" />
-          </div>
-          <div class="form-field">
-            <label>Bio *</label>
-            <textarea name="bio" rows="4" required>${esc(m.bio)}</textarea>
-          </div>
-          <span class="field-error" id="edit-error"></span>
-          <div class="modal-actions">
-            <button type="button" id="cancel-edit" class="btn-cancel">Cancel</button>
-            <button type="submit">Save Changes →</button>
-          </div>
-        </form>
-      </div>
-    `;
-    document.body.appendChild(modal);
+    const headshotInput = document.getElementById('edit-headshot-url') as HTMLInputElement;
+    const preview = document.getElementById('edit-preview')!;
+    const previewImg = document.getElementById('edit-preview-img') as HTMLImageElement;
+    const uploadText = document.getElementById('edit-upload-text')!;
 
-    document.getElementById('cancel-edit')!.addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    headshotInput.value = m.headshot_url ?? '';
+    if (m.headshot_url) {
+      previewImg.src = m.headshot_url;
+      preview.style.display = '';
+      uploadText.textContent = 'Replace photo…';
+    } else {
+      previewImg.src = '';
+      preview.style.display = 'none';
+      uploadText.textContent = 'Choose photo…';
+    }
 
-    document.getElementById('edit-form')!.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target as HTMLFormElement);
-      const payload = {
-        name: fd.get('name'), role: fd.get('role'),
-        order: Number(fd.get('order')), email: fd.get('email') ?? '',
-        bio: fd.get('bio'), headshot_url: fd.get('headshot_url') || null,
-      };
-      const btn = (e.target as HTMLFormElement).querySelector<HTMLButtonElement>('[type=submit]')!;
-      btn.textContent = 'Saving…'; btn.disabled = true;
-      const res = await adminFetch(`/board-members/${m.id}`, { method: 'PUT', body: JSON.stringify(payload) });
-      if (res.ok) { modal.remove(); loadBoard(); }
-      else { document.getElementById('edit-error')!.textContent = 'Save failed. Try again.'; btn.textContent = 'Save Changes →'; btn.disabled = false; }
-    });
+    document.getElementById('edit-error')!.textContent = '';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   }
 
-  function esc(str: string) {
-    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    editingId = null;
   }
 
+  document.getElementById('cancel-edit')!.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!editingId) return;
+    const fd = new FormData(editForm);
+    const payload = {
+      name: fd.get('name'), role: fd.get('role'),
+      order: Number(fd.get('order')), email: fd.get('email') ?? '',
+      bio: fd.get('bio'), headshot_url: (fd.get('headshot_url') as string) || null,
+    };
+    const btn = document.getElementById('edit-save-btn') as HTMLButtonElement;
+    btn.textContent = 'Saving…'; btn.disabled = true;
+    const res = await adminFetch(`/board-members/${editingId}`, { method: 'PUT', body: JSON.stringify(payload) });
+    if (res.ok) { closeModal(); loadBoard(); }
+    else { document.getElementById('edit-error')!.textContent = 'Save failed. Try again.'; }
+    btn.textContent = 'Save Changes →'; btn.disabled = false;
+  });
+
+  // ── Add form ───────────────────────────────────────────────────────────────
   document.getElementById('add-form')!.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target as HTMLFormElement);
     const payload = {
       name: fd.get('name'), role: fd.get('role'),
       order: Number(fd.get('order')), email: fd.get('email') ?? '',
-      bio: fd.get('bio'), headshot_url: fd.get('headshot_url') || null,
+      bio: fd.get('bio'), headshot_url: (fd.get('headshot_url') as string) || null,
     };
     const btn = document.getElementById('add-btn') as HTMLButtonElement;
     const errEl = document.getElementById('add-error')!;
@@ -197,12 +315,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const res = await adminFetch('/board-members', { method: 'POST', body: JSON.stringify(payload) });
     if (res.ok) {
       (e.target as HTMLFormElement).reset();
+      (document.getElementById('add-headshot-url') as HTMLInputElement).value = '';
+      document.getElementById('add-preview')!.style.display = 'none';
+      document.getElementById('add-upload-text')!.textContent = 'Choose photo…';
       loadBoard();
     } else {
       errEl.textContent = 'Add failed. Try again.';
     }
     btn.textContent = 'Add Member →'; btn.disabled = false;
   });
+
+  function esc(str: string) {
+    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
   loadBoard();
 </script>
@@ -216,39 +341,82 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </script>
 
 <style>
-  .board-list { display: flex; flex-direction: column; gap: 1rem; }
+  .board-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
   .member-row {
-    display: grid;
-    grid-template-columns: 1fr 2fr auto;
-    gap: 1.5rem;
+    display: flex;
     align-items: center;
-    padding: 1.25rem 1.5rem;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
     border: 1px solid var(--border);
     background: white;
   }
 
-  .member-info { display: flex; flex-direction: column; gap: 0.2rem; }
-  .member-info strong { font-size: 0.95rem; color: var(--text-primary); }
-  .member-role { font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
-  .member-email { font-size: 0.8rem; color: var(--text-secondary); }
-  .member-bio-preview { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+  .member-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+  }
+  .member-avatar span { color: #fff; font-size: 0.85rem; font-weight: 600; }
+  .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .member-info { flex: 1; min-width: 0; }
+  .member-info strong { display: block; font-size: 0.92rem; color: var(--text-primary); }
+  .member-role { font-size: 0.75rem; color: var(--text-secondary); }
 
   .member-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
 
   .btn-edit, .btn-delete {
-    padding: 0.4rem 0.9rem;
+    padding: 0.35rem 0.8rem;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.78rem;
     cursor: pointer;
     border-radius: 2px;
+    white-space: nowrap;
   }
-
   .btn-edit { background: none; border: 1px solid var(--border); color: var(--text-secondary); }
   .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
   .btn-delete { background: none; border: 1px solid #fca5a5; color: #b91c1c; }
   .btn-delete:hover { background: #fef2f2; }
 
+  /* Photo upload */
+  .photo-upload-wrap { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .photo-preview {
+    position: relative;
+    width: 100px; height: 100px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .remove-photo {
+    position: absolute; top: 3px; right: 3px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    border: none; border-radius: 50%;
+    width: 20px; height: 20px;
+    font-size: 0.65rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+
+  .upload-btn {
+    display: inline-flex; align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px dashed var(--border);
+    background: var(--surface);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    width: fit-content;
+  }
+  .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .upload-hint { font-size: 0.75rem; color: var(--text-secondary); opacity: 0.7; }
+
+  /* Add form */
   .add-section { max-width: 680px; }
 
   .section-heading {
@@ -259,47 +427,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   .member-form { display: flex; flex-direction: column; gap: 1rem; }
-
   .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
   .form-field { display: flex; flex-direction: column; gap: 0.35rem; }
-
   .form-field label {
-    font-size: 0.78rem;
-    font-weight: 500;
+    font-size: 0.78rem; font-weight: 500;
     color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    text-transform: uppercase; letter-spacing: 0.06em;
   }
-
   .form-field input, .form-field textarea {
     padding: 0.65rem 0.85rem;
     border: 1px solid var(--border);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    background: white;
-    color: var(--text-primary);
-    outline: none;
-    resize: vertical;
+    font-size: 0.9rem; background: white;
+    color: var(--text-primary); outline: none; resize: vertical;
   }
-
   .form-field input:focus, .form-field textarea:focus { border-color: var(--accent); }
 
   .field-error { display: block; font-size: 0.82rem; color: #b91c1c; min-height: 1.2em; }
 
   .member-form > button[type=submit] {
     align-self: flex-start;
-    background: var(--accent);
-    color: #fff;
-    border: none;
+    background: var(--accent); color: #fff; border: none;
     padding: 0.7rem 1.4rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+    cursor: pointer; transition: opacity 0.2s;
   }
-
   .member-form > button[type=submit]:hover { opacity: 0.85; }
   .member-form > button[type=submit]:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -310,38 +463,26 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     display: flex; align-items: center; justify-content: center;
     z-index: 1000; padding: 1rem;
   }
-
   .modal {
-    background: white;
-    padding: 2rem 2.25rem;
-    width: 100%; max-width: 620px;
+    background: white; padding: 2rem 2.25rem;
+    width: 100%; max-width: 580px;
     max-height: 90vh; overflow-y: auto;
   }
-
   .modal-title {
     font-family: 'DM Serif Display', serif;
-    font-size: 1.4rem;
-    font-weight: 400;
-    margin-bottom: 1.5rem;
+    font-size: 1.4rem; font-weight: 400; margin-bottom: 1.5rem;
   }
-
   .modal-actions { display: flex; gap: 0.75rem; align-items: center; }
-
   .btn-cancel {
     background: none; border: 1px solid var(--border);
     color: var(--text-secondary);
     padding: 0.65rem 1.1rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer;
   }
-
-  .modal .member-form > button[type=submit] { margin: 0; }
 
   .loading-msg { font-size: 0.9rem; color: var(--text-secondary); }
 
-  @media (max-width: 680px) {
-    .member-row { grid-template-columns: 1fr; }
+  @media (max-width: 560px) {
     .form-row-2 { grid-template-columns: 1fr; }
   }
 </style>
