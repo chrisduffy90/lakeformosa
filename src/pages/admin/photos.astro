@@ -12,6 +12,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <section class="surface">
     <div class="section-inner">
+      <div class="photo-tabs fade-in" id="photo-tabs" role="tablist">
+        <button type="button" class="photo-tab" data-tab="pending" role="tab">Pending Review</button>
+        <button type="button" class="photo-tab" data-tab="approved" role="tab">Approved</button>
+        <button type="button" class="photo-tab" data-tab="rejected" role="tab">Rejected</button>
+      </div>
       <div id="queue-list" class="queue-list fade-in">
         <p class="loading-msg">Loading…</p>
       </div>
@@ -30,16 +35,45 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   if (!getSessionId()) window.location.href = '/admin';
 
+  type Tab = 'pending' | 'approved' | 'rejected';
+  let allPhotos: Photo[] = [];
+  let activeTab: Tab = 'pending';
+
+  function updateTabCounts() {
+    const counts: Record<Tab, number> = { pending: 0, approved: 0, rejected: 0 };
+    for (const p of allPhotos) {
+      if (p.status === 'pending' || p.status === 'approved' || p.status === 'rejected') counts[p.status]++;
+    }
+    document.querySelectorAll<HTMLButtonElement>('.photo-tab').forEach(btn => {
+      const tab = btn.dataset.tab as Tab;
+      btn.textContent = `${tab === 'pending' ? 'Pending Review' : tab[0].toUpperCase() + tab.slice(1)} (${counts[tab]})`;
+      btn.classList.toggle('active', tab === activeTab);
+    });
+  }
+
   async function loadQueue() {
     const listEl = document.getElementById('queue-list')!;
     try {
       const res = await adminFetch('/gallery-photos/queue');
-      const photos = await res.json() as Photo[];
-      if (!photos.length) {
-        listEl.innerHTML = '<p class="loading-msg">No photos waiting for review.</p>';
-        return;
-      }
-      listEl.innerHTML = photos.map(p => `
+      allPhotos = await res.json() as Photo[];
+      updateTabCounts();
+      renderList();
+    } catch {
+      listEl.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Failed to load photos.</p>';
+    }
+  }
+
+  function renderList() {
+    const listEl = document.getElementById('queue-list')!;
+    const photos = allPhotos.filter(p => p.status === activeTab);
+
+    if (!photos.length) {
+      const emptyText = activeTab === 'pending' ? 'No photos waiting for review.' : `No ${activeTab} photos.`;
+      listEl.innerHTML = `<p class="loading-msg">${emptyText}</p>`;
+      return;
+    }
+
+    listEl.innerHTML = photos.map(p => `
         <div class="queue-row" data-id="${p.id}">
           <div class="queue-thumb"><img src="${p.url}" alt="${esc(p.caption ?? 'Submitted photo')}" loading="lazy" /></div>
           <div class="queue-info">
@@ -67,9 +101,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       listEl.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
         btn.addEventListener('click', () => deletePhoto(btn.dataset.id!));
       });
-    } catch {
-      listEl.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Failed to load photos.</p>';
-    }
   }
 
   async function setStatus(id: string, status: 'approved' | 'rejected') {
@@ -107,6 +138,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  document.querySelectorAll<HTMLButtonElement>('.photo-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeTab = btn.dataset.tab as Tab;
+      updateTabCounts();
+      renderList();
+    });
+  });
+
   loadQueue();
 </script>
 
@@ -119,6 +158,30 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </script>
 
 <style>
+  .photo-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .photo-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem 0.25rem;
+    margin-right: 1.5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .photo-tab:hover { color: var(--text-primary); }
+  .photo-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
   .queue-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
   .queue-row {
