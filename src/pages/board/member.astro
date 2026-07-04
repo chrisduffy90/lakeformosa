@@ -13,9 +13,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="section-inner">
       <div id="bio-content" class="bio-layout fade-in" style="display:none">
         <div class="bio-avatar-col">
-          <div class="bio-avatar" id="bio-avatar">
-            <span id="bio-initials"></span>
-          </div>
+          <div class="bio-avatar" id="bio-avatar"></div>
         </div>
         <div class="bio-info">
           <div class="bio-role" id="bio-role"></div>
@@ -34,11 +32,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <script>
   import { apiFetch } from '../../lib/api';
-
-  function initials(name: string) {
-    if (name === 'Open Position') return '?';
-    return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
-  }
+  import { avatarMarkup } from '../../lib/avatar';
 
   async function load() {
     const params = new URLSearchParams(window.location.search);
@@ -52,12 +46,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       document.title = `${data.name} | Lake Formosa Neighborhood Association`;
 
-      const avatarEl = document.getElementById('bio-avatar')!;
-      if (data.headshot_url) {
-        avatarEl.innerHTML = `<img src="${data.headshot_url}" alt="${data.name}" />`;
-      } else {
-        document.getElementById('bio-initials')!.textContent = initials(data.name);
-      }
+      document.getElementById('bio-avatar')!.innerHTML = avatarMarkup(data.headshot_url, data.name);
 
       document.getElementById('bio-role')!.textContent = data.role;
       document.getElementById('bio-name')!.textContent = data.name;
@@ -115,19 +104,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     width: 160px;
     height: 160px;
     border-radius: 50%;
-    background: var(--accent);
+    background: #e4e2dc;
+    border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    color: #a4a29a;
   }
 
-  .bio-avatar span {
-    font-family: 'DM Serif Display', serif;
-    font-size: 3rem;
-    color: #fff;
-    letter-spacing: 0.02em;
-  }
+  .bio-avatar .avatar-placeholder-icon { width: 60%; height: 60%; }
 
   .bio-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -150,7 +136,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   .bio-body {
     font-size: 0.97rem;
-    color: var(--text-secondary);
+    font-weight: 400;
+    color: #46453f;
     line-height: 1.85;
     margin-bottom: 1.5rem;
     max-width: 560px;

@@ -22,6 +22,7 @@ const nav = [
   { href: '/dues',      label: 'Dues' },
   { href: '/contact',   label: 'Contact' },
 ];
+
 ---
 
 <!doctype html>
@@ -43,6 +44,10 @@ const nav = [
             class={`nav-text-link${path === link.href ? ' active' : ''}`}
           >{link.label}</a>
         ))}
+        <a
+          href="/admin"
+          class={`nav-text-link admin-link${path.startsWith('/admin') ? ' active' : ''}`}
+        >Admin</a>
         <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
@@ -51,6 +56,7 @@ const nav = [
 
     <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
       {nav.map(link => <a href={link.href}>{link.label}</a>)}
+      <a href="/admin">Admin</a>
     </div>
 
     <slot />

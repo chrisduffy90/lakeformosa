@@ -63,21 +63,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <script>
   import { apiFetch } from '../../lib/api';
+  import { avatarMarkup } from '../../lib/avatar';
 
   type Member = { id: string; name: string; role: string; order: number; bio: string; email?: string; headshot_url?: string };
 
-  function initials(name: string) {
-    if (name === 'Open Position') return '?';
-    return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
-  }
-
   function officerCard(m: Member) {
-    const avatar = m.headshot_url
-      ? `<img src="${m.headshot_url}" alt="${m.name}" />`
-      : `<span>${initials(m.name)}</span>`;
     return `
       <a href="/board/member?id=${m.id}" class="officer-card">
-        <div class="officer-avatar">${avatar}</div>
+        <div class="officer-avatar">${avatarMarkup(m.headshot_url, m.name)}</div>
         <div class="officer-role">${m.role}</div>
         <div class="officer-name">${m.name}</div>
         <p class="officer-bio">${m.bio}</p>
@@ -87,12 +80,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   function memberCard(m: Member) {
-    const avatar = m.headshot_url
-      ? `<img src="${m.headshot_url}" alt="${m.name}" />`
-      : `<span>${initials(m.name)}</span>`;
     return `
       <a href="/board/member?id=${m.id}" class="member-card">
-        <div class="member-avatar">${avatar}</div>
+        <div class="member-avatar">${avatarMarkup(m.headshot_url, m.name)}</div>
         <div class="member-name">${m.name}</div>
       </a>
     `;
@@ -185,17 +175,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .officer-card {
     background: var(--surface);
     border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(28, 28, 26, 0.04);
     padding: 2rem 1.75rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     color: inherit;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
 
   .officer-card:hover {
     background: var(--accent-light);
     border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(28, 28, 26, 0.07);
     text-decoration: none;
   }
 
@@ -203,21 +195,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    background: var(--accent);
+    background: #e4e2dc;
+    border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 1.25rem;
     overflow: hidden;
     flex-shrink: 0;
+    color: #a4a29a;
   }
 
-  .officer-avatar span {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.3rem;
-    color: #fff;
-    letter-spacing: 0.02em;
-  }
+  .officer-avatar .avatar-placeholder-icon { width: 60%; height: 60%; }
 
   .officer-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -239,8 +228,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   .officer-bio {
-    font-size: 0.82rem;
-    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #46453f;
     line-height: 1.7;
     flex: 1;
   }
@@ -262,18 +252,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .member-card {
     background: var(--surface);
     border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(28, 28, 26, 0.04);
     padding: 1.5rem 1.25rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     color: inherit;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
 
   .member-card:hover {
     background: var(--accent-light);
     border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(28, 28, 26, 0.07);
     text-decoration: none;
   }
 
@@ -281,7 +273,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: var(--bg);
+    background: #e4e2dc;
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -289,13 +281,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     margin-bottom: 0.85rem;
     overflow: hidden;
     flex-shrink: 0;
+    color: #a4a29a;
   }
 
-  .member-avatar span {
-    font-family: 'DM Serif Display', serif;
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-  }
+  .member-avatar .avatar-placeholder-icon { width: 60%; height: 60%; }
 
   .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
 

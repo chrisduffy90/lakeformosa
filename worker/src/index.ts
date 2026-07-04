@@ -4,6 +4,7 @@ export interface Env {
   DATABASE_URL: string;
   RESEND_API_KEY: string;
   ADMIN_KEY: string;
+  TURNSTILE_SECRET_KEY: string;
   RATE_LIMITER: RateLimit;
   PHOTOS: R2Bucket;
 }
@@ -19,6 +20,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 const SITE_URL = 'https://lakeformosa.org';
+const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 function corsHeaders(origin: string | null): HeadersInit {
   const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -42,6 +44,40 @@ function isValidEmail(v: unknown): v is string {
 
 function makeToken(): string {
   return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, '');
+}
+
+async function verifyTurnstile(token: unknown, remoteip: string | null, secretKey: string): Promise<boolean> {
+  if (typeof token !== 'string' || !token) {
+    console.error('turnstile: no token in request');
+    return false;
+  }
+  try {
+    const body = new FormData();
+    body.append('secret', secretKey);
+    body.append('response', token);
+    if (remoteip) body.append('remoteip', remoteip);
+    const res = await fetch(TURNSTILE_VERIFY_URL, { method: 'POST', body });
+    const data = await res.json() as { success?: boolean; 'error-codes'?: string[] };
+    if (data.success !== true) console.error('turnstile: verify failed', JSON.stringify(data));
+    return data.success === true;
+  } catch (e) {
+    console.error('turnstile: verify request threw', e);
+    return false;
+  }
+}
+
+// Sniffs real image type from file bytes rather than trusting the client-supplied
+// Content-Type, since that header is fully attacker-controlled on a public endpoint.
+function sniffImageType(bytes: Uint8Array): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+  if (bytes.length >= 6 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'image/gif';
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+  ) return 'image/webp';
+  return null;
 }
 
 type Sql = ReturnType<typeof neon>;
@@ -217,9 +253,90 @@ export default {
           headers: {
             'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
             'Cache-Control': 'public, max-age=31536000',
+            'X-Content-Type-Options': 'nosniff',
             ...corsHeaders(origin),
           },
         });
+      }
+
+      // ── GALLERY ───────────────────────────────────────────────────────────────
+
+      // GET /gallery-photos — public, approved only
+      if (pathname === '/gallery-photos' && request.method === 'GET') {
+        const rows = await sql`
+          SELECT id, storage_key, caption, created_at FROM gallery_photos
+          WHERE status = 'approved' ORDER BY created_at DESC`;
+        const withUrl = rows.map(r => ({ ...r, url: `${url.origin}/photos/${r.storage_key}` }));
+        return json(withUrl, 200, origin);
+      }
+
+      // GET /gallery-photos/queue — admin, pending + rejected for moderation
+      if (pathname === '/gallery-photos/queue' && request.method === 'GET') {
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
+        const rows = await sql`
+          SELECT * FROM gallery_photos WHERE status != 'approved' ORDER BY created_at ASC`;
+        const withUrl = rows.map(r => ({ ...r, url: `${url.origin}/photos/${r.storage_key}` }));
+        return json(withUrl, 200, origin);
+      }
+
+      // POST /gallery-photos — public, Turnstile-gated
+      if (pathname === '/gallery-photos' && request.method === 'POST') {
+        const formData = await request.formData();
+
+        const verified = await verifyTurnstile(
+          formData.get('turnstile_token'),
+          request.headers.get('CF-Connecting-IP'),
+          env.TURNSTILE_SECRET_KEY,
+        );
+        if (!verified) return json({ error: 'Verification failed. Please try again.' }, 400, origin);
+
+        const file = formData.get('file') as File | null;
+        if (!file) return json({ error: 'No file provided' }, 400, origin);
+        if (file.size > 10 * 1024 * 1024) return json({ error: 'Photo must be under 10MB' }, 400, origin);
+
+        const buffer = await file.arrayBuffer();
+        const realType = sniffImageType(new Uint8Array(buffer));
+        if (!realType) return json({ error: 'Only JPEG, PNG, WebP, or GIF images are allowed' }, 400, origin);
+
+        const caption = (formData.get('caption') as string | null)?.trim().slice(0, 200) || null;
+        const submitted_by = (formData.get('submitted_by') as string | null)?.trim().slice(0, 100) || null;
+        const submitted_email = (formData.get('submitted_email') as string | null)?.trim().slice(0, 200) || null;
+
+        const ext = realType.split('/')[1];
+        const key = `gallery/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        await env.PHOTOS.put(key, buffer, { httpMetadata: { contentType: realType } });
+
+        const rows = await sql`
+          INSERT INTO gallery_photos (storage_key, caption, submitted_by, submitted_email)
+          VALUES (${key}, ${caption}, ${submitted_by}, ${submitted_email})
+          RETURNING id`;
+
+        return json({ ok: true, id: rows[0].id }, 201, origin);
+      }
+
+      // PUT /gallery-photos/:id — admin, approve/reject
+      const galleryMatch = pathname.match(/^\/gallery-photos\/([^/]+)$/);
+      if (galleryMatch && request.method === 'PUT') {
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
+        const { status } = await request.json() as { status?: string };
+        if (status !== 'approved' && status !== 'rejected')
+          return json({ error: 'status must be "approved" or "rejected"' }, 400, origin);
+        const rows = await sql`
+          UPDATE gallery_photos SET status = ${status} WHERE id = ${galleryMatch[1]} RETURNING *`;
+        if (!rows.length) return json({ error: 'Not found' }, 404, origin);
+        return json(rows[0], 200, origin);
+      }
+
+      // DELETE /gallery-photos/:id — admin
+      if (galleryMatch && request.method === 'DELETE') {
+        const deny = await checkAdmin(request, env, sql, origin);
+        if (deny) return deny;
+        const rows = await sql`DELETE FROM gallery_photos WHERE id = ${galleryMatch[1]} RETURNING storage_key`;
+        if (!rows.length) return json({ error: 'Not found' }, 404, origin);
+        await env.PHOTOS.delete(rows[0].storage_key as string);
+        return json({ ok: true }, 200, origin);
       }
 
       // ── BOARD MEMBERS ─────────────────────────────────────────────────────────
