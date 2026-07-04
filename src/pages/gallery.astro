@@ -157,12 +157,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     form.reset();
-    btn.textContent = 'Submitted ✓';
-    btn.style.opacity = '0.6';
-    const successMsg = document.createElement('p');
-    successMsg.className = 'submit-success';
+    if (typeof turnstile !== 'undefined') turnstile.reset();
+
+    let successMsg = document.querySelector('.submit-success') as HTMLElement | null;
+    if (!successMsg) {
+      successMsg = document.createElement('p');
+      successMsg.className = 'submit-success';
+      form.after(successMsg);
+    }
     successMsg.textContent = 'Thank you! Your photo will appear in the gallery after board review.';
-    form.after(successMsg);
+
+    btn.textContent = 'Submitted ✓';
+    setTimeout(() => {
+      btn.textContent = 'Submit photo →';
+      btn.disabled = false;
+    }, 1500);
   });
 
   loadGallery();

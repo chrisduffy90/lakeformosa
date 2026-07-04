@@ -117,11 +117,16 @@ export default {
         return json({ ok: true, message: 'Lake Formosa Neighborhood Association API' }, 200, origin);
       }
 
-      // Rate limit all mutating requests (enforced on Workers Paid plan only; no-op on free)
+      // Rate limit mutating requests, but not authenticated admin actions — this exists to
+      // stop public abuse (signup/contact/gallery-upload spam), not to throttle the board
+      // batch-approving photos or managing content.
       if (request.method === 'POST' || request.method === 'PUT' || request.method === 'DELETE') {
-        const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-        const { success } = await env.RATE_LIMITER.limit({ key: ip });
-        if (!success) return json({ error: 'Too many requests. Please try again later.' }, 429, origin);
+        const isAdmin = (await checkAdmin(request, env, sql, origin)) === null;
+        if (!isAdmin) {
+          const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+          const { success } = await env.RATE_LIMITER.limit({ key: ip });
+          if (!success) return json({ error: 'Too many requests. Please try again later.' }, 429, origin);
+        }
       }
 
       // ── AUTH ──────────────────────────────────────────────────────────────────
