@@ -269,7 +269,7 @@ export default {
       // GET /gallery-photos — public, approved only
       if (pathname === '/gallery-photos' && request.method === 'GET') {
         const rows = await sql`
-          SELECT id, storage_key, caption, created_at FROM gallery_photos
+          SELECT id, storage_key, caption, submitted_by, created_at FROM gallery_photos
           WHERE status = 'approved' ORDER BY created_at DESC`;
         const withUrl = rows.map(r => ({ ...r, url: `${url.origin}/photos/${r.storage_key}` }));
         return json(withUrl, 200, origin);

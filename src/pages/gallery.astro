@@ -34,6 +34,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </section>
 
+  <div id="photo-modal" class="photo-modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <button type="button" class="photo-modal-close" id="photo-modal-close" aria-label="Close">✕</button>
+    <button type="button" class="photo-modal-nav photo-modal-prev" id="photo-modal-prev" aria-label="Previous photo">‹</button>
+    <button type="button" class="photo-modal-nav photo-modal-next" id="photo-modal-next" aria-label="Next photo">›</button>
+    <div class="photo-modal-content">
+      <img id="photo-modal-img" src="" alt="" />
+      <div class="photo-modal-info">
+        <p class="photo-modal-caption" id="photo-modal-caption" style="display:none"></p>
+        <span class="photo-modal-meta" id="photo-modal-meta"></span>
+      </div>
+    </div>
+  </div>
+
   <section>
     <div class="section-inner">
       <div class="section-grid fade-in">
@@ -74,7 +87,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script>
   import { apiFetch } from '../lib/api';
 
-  type Photo = { id: string; url: string; caption?: string };
+  type Photo = { id: string; url: string; caption?: string; submitted_by?: string; created_at: string };
+
+  let photos: Photo[] = [];
+  let currentIndex = -1;
 
   async function loadGallery() {
     const grid = document.getElementById('gallery-grid')!;
@@ -90,17 +106,79 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         return;
       }
 
-      grid.innerHTML = data.map(p => `
-        <div class="gallery-cell">
+      photos = data;
+
+      grid.innerHTML = data.map((p, i) => `
+        <div class="gallery-cell" data-index="${i}">
           <img src="${p.url}" alt="${p.caption ?? 'Neighborhood photo'}" loading="lazy" />
           ${p.caption ? `<p class="gallery-caption">${p.caption}</p>` : ''}
         </div>
       `).join('');
+
+      grid.querySelectorAll<HTMLElement>('.gallery-cell').forEach(cell => {
+        cell.addEventListener('click', () => openModal(Number(cell.dataset.index)));
+      });
     } catch {
       grid.style.display = 'none';
       emptyMsg.style.display = '';
     }
   }
+
+  // Photo modal
+  const modal = document.getElementById('photo-modal')!;
+  const modalImg = document.getElementById('photo-modal-img') as HTMLImageElement;
+  const modalCaption = document.getElementById('photo-modal-caption')!;
+  const modalMeta = document.getElementById('photo-modal-meta')!;
+
+  function renderModal() {
+    const p = photos[currentIndex];
+    modalImg.src = p.url;
+    modalImg.alt = p.caption ?? 'Neighborhood photo';
+
+    if (p.caption) {
+      modalCaption.textContent = p.caption;
+      modalCaption.style.display = '';
+    } else {
+      modalCaption.style.display = 'none';
+    }
+
+    const date = new Date(p.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    modalMeta.textContent = [p.submitted_by ? `Photo by ${p.submitted_by}` : null, date].filter(Boolean).join(' · ');
+  }
+
+  function openModal(index: number) {
+    currentIndex = index;
+    renderModal();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function showPrev() {
+    currentIndex = (currentIndex - 1 + photos.length) % photos.length;
+    renderModal();
+  }
+
+  function showNext() {
+    currentIndex = (currentIndex + 1) % photos.length;
+    renderModal();
+  }
+
+  document.getElementById('photo-modal-close')!.addEventListener('click', closeModal);
+  document.getElementById('photo-modal-prev')!.addEventListener('click', showPrev);
+  document.getElementById('photo-modal-next')!.addEventListener('click', showNext);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (modal.style.display === 'none') return;
+    if (e.key === 'Escape') closeModal();
+    else if (e.key === 'ArrowLeft') showPrev();
+    else if (e.key === 'ArrowRight') showNext();
+  });
 
   // Photo submission form
   const form = document.getElementById('photo-form') as HTMLFormElement;
@@ -189,27 +267,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <style>
   .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    columns: 3;
+    column-gap: 0.75rem;
   }
 
   .gallery-cell {
-    aspect-ratio: 4/3;
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
     overflow: hidden;
     background: var(--border);
     position: relative;
+    cursor: pointer;
   }
 
   .gallery-cell img {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
     display: block;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, filter 0.2s ease;
   }
 
-  .gallery-cell:hover img { transform: scale(1.03); }
+  .gallery-cell:hover img { transform: scale(1.03); filter: brightness(0.92); }
 
   .gallery-caption {
     position: absolute;
@@ -226,7 +304,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   .gallery-placeholder {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 4/3;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -238,6 +316,98 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   .gallery-placeholder-icon { font-size: 1.25rem; opacity: 0.4; }
+
+  /* Photo modal */
+  .photo-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 8, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 3rem 1.5rem;
+  }
+
+  .photo-modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: min(900px, 100%);
+    max-height: 100%;
+  }
+
+  .photo-modal-content img {
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    display: block;
+  }
+
+  .photo-modal-info {
+    text-align: center;
+    margin-top: 1rem;
+    max-width: 560px;
+  }
+
+  .photo-modal-caption {
+    color: #fff;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 0.35rem;
+  }
+
+  .photo-modal-meta {
+    display: block;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .photo-modal-close,
+  .photo-modal-nav {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .photo-modal-close:hover,
+  .photo-modal-nav:hover { background: rgba(0, 0, 0, 0.75); }
+
+  .photo-modal-close {
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .photo-modal-nav {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    font-size: 1.6rem;
+    line-height: 1;
+  }
+
+  .photo-modal-prev { left: 1.25rem; }
+  .photo-modal-next { right: 1.25rem; }
+
+  @media (max-width: 640px) {
+    .photo-modal-nav { width: 40px; height: 40px; font-size: 1.3rem; }
+    .photo-modal-prev { left: 0.5rem; }
+    .photo-modal-next { right: 0.5rem; }
+    .photo-modal-close { top: 0.75rem; right: 0.75rem; }
+  }
 
   /* Photo submit form */
   .photo-submit-form { display: flex; flex-direction: column; gap: 1rem; max-width: 520px; }
@@ -305,8 +475,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     line-height: 1.6;
   }
 
+  @media (max-width: 780px) {
+    .gallery-grid { columns: 2; }
+  }
+
   @media (max-width: 600px) {
-    .gallery-grid { grid-template-columns: repeat(2, 1fr); }
     .form-row-2 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 480px) {
+    .gallery-grid { columns: 1; }
   }
 </style>
