@@ -271,37 +271,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     column-gap: 0.75rem;
   }
 
-  .gallery-cell {
-    break-inside: avoid;
-    margin-bottom: 0.75rem;
-    overflow: hidden;
-    background: var(--border);
-    position: relative;
-    cursor: pointer;
-  }
-
-  .gallery-cell img {
-    width: 100%;
-    height: auto;
-    display: block;
-    transition: transform 0.3s ease, filter 0.2s ease;
-  }
-
-  .gallery-cell:hover img { transform: scale(1.03); filter: brightness(0.92); }
-
-  .gallery-caption {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0,0,0,0.55);
-    color: white;
-    font-size: 0.75rem;
-    padding: 0.4rem 0.6rem;
-    margin: 0;
-    line-height: 1.4;
-  }
-
   .gallery-placeholder {
     width: 100%;
     aspect-ratio: 4/3;
@@ -468,13 +437,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   button[type="submit"]:hover { opacity: 0.8; }
   button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .submit-success {
-    font-size: 0.9rem;
-    color: var(--accent);
-    margin-top: 0.5rem;
-    line-height: 1.6;
-  }
-
   @media (max-width: 780px) {
     .gallery-grid { columns: 2; }
   }
@@ -485,5 +447,48 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   @media (max-width: 480px) {
     .gallery-grid { columns: 1; }
+  }
+</style>
+
+<style is:global>
+  /* These classes are applied to elements created dynamically in the client script
+     (innerHTML/createElement), which never receive Astro's scoped data-astro-cid
+     attribute — so they must live in an unscoped style block to take effect. */
+  .gallery-cell {
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    background: var(--border);
+    position: relative;
+    cursor: pointer;
+  }
+
+  .gallery-cell img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.3s ease, filter 0.2s ease;
+  }
+
+  .gallery-cell:hover img { transform: scale(1.03); filter: brightness(0.92); }
+
+  .gallery-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.55);
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .submit-success {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-top: 0.5rem;
+    line-height: 1.6;
   }
 </style>

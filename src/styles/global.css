@@ -385,39 +385,6 @@ nav {
   line-height: 1.65;
 }
 
-/* ── GALLERY ───────────────────────────────────────────────────────────── */
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  margin-top: 2rem;
-}
-.gallery-cell {
-  aspect-ratio: 4/3;
-  background: var(--bg);
-  overflow: hidden;
-  position: relative;
-}
-.gallery-cell img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
-}
-.gallery-cell:hover img { transform: scale(1.04); }
-.gallery-placeholder {
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 0.5rem;
-  color: var(--border);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.gallery-placeholder-icon { font-size: 1.5rem; opacity: 0.4; }
-
 /* ── CONTACT & SIGNUP ──────────────────────────────────────────────────── */
 .two-col {
   display: grid;
@@ -617,7 +584,6 @@ footer a:hover { color: var(--text-primary); }
   .section-inner { padding: 3.5rem 1.25rem; }
   .two-col { grid-template-columns: 1fr; gap: 2rem; }
   .board-grid { grid-template-columns: repeat(2, 1fr); }
-  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .signup-inner { grid-template-columns: 1fr; gap: 2rem; padding: 3.5rem 1.25rem; }
   footer { padding: 1.5rem 1.25rem; flex-direction: column; gap: 0.35rem; text-align: center; }
   .page-hero-inner { padding: 3.5rem 1.25rem 2.5rem; }
@@ -625,5 +591,4 @@ footer a:hover { color: var(--text-primary); }
 }
 @media (max-width: 480px) {
   .board-grid { grid-template-columns: 1fr; }
-  .gallery-grid { grid-template-columns: 1fr; }
 }
