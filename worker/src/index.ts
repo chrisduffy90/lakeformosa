@@ -275,12 +275,12 @@ export default {
         return json(withUrl, 200, origin);
       }
 
-      // GET /gallery-photos/queue — admin, pending + rejected for moderation
+      // GET /gallery-photos/queue — admin, all photos (pending first) for moderation/management
       if (pathname === '/gallery-photos/queue' && request.method === 'GET') {
         const deny = await checkAdmin(request, env, sql, origin);
         if (deny) return deny;
         const rows = await sql`
-          SELECT * FROM gallery_photos WHERE status != 'approved' ORDER BY created_at ASC`;
+          SELECT * FROM gallery_photos ORDER BY (status <> 'pending'), created_at DESC`;
         const withUrl = rows.map(r => ({ ...r, url: `${url.origin}/photos/${r.storage_key}` }));
         return json(withUrl, 200, origin);
       }
