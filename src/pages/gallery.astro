@@ -10,27 +10,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <section class="surface">
+  <section>
     <div class="section-inner">
-      <div class="section-grid fade-in">
-        <span class="section-label">Photos</span>
+      <div class="cta-bar fade-in">
         <div>
-          <div id="gallery-grid" class="gallery-grid">
-            <!-- Placeholder skeleton while loading -->
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div class="gallery-cell">
-                <div class="gallery-placeholder">
-                  <span class="gallery-placeholder-icon">◻</span>
-                  <span>Photo {i + 1}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p id="gallery-empty" style="display:none;font-size:0.9rem;color:var(--text-secondary);line-height:1.7;margin-top:1rem">
-            Photos coming soon. Be the first to submit one below.
-          </p>
+          <div class="cta-label">Got a great shot?</div>
+          <div class="cta-heading">Share your Lake Formosa photos</div>
         </div>
+        <a href="#submit" class="cta-btn">Submit a photo →</a>
       </div>
+    </div>
+  </section>
+
+  <section class="surface">
+    <div class="gallery-section-inner">
+      <div class="gallery-label fade-in">Photos</div>
+      <div id="gallery-grid" class="gallery-grid fade-in">
+        <!-- Placeholder skeleton while loading -->
+        {Array.from({ length: 9 }).map((_, i) => (
+          <div class="gallery-cell">
+            <div class="gallery-placeholder">
+              <span class="gallery-placeholder-icon">◻</span>
+              <span>Photo {i + 1}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p id="gallery-empty" style="display:none;font-size:0.9rem;color:var(--text-secondary);line-height:1.7;margin-top:1rem">
+        Photos coming soon. Be the first to submit one below.
+      </p>
     </div>
   </section>
 
@@ -47,7 +55,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <section>
+  <section id="submit">
     <div class="section-inner">
       <div class="section-grid fade-in">
         <span class="section-label">Submit</span>
@@ -266,6 +274,60 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </script>
 
 <style>
+  /* ── CTA BAR ── */
+  .cta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 2rem 2.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .cta-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .cta-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+  .cta-btn {
+    background: var(--accent);
+    color: #fff;
+    padding: 0.7rem 1.4rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .cta-btn:hover { opacity: 0.85; text-decoration: none; }
+
+  /* ── PHOTO GRID SECTION (wider than the standard prose section-inner) ── */
+  .gallery-section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 5.5rem 2.5rem;
+  }
+
+  .gallery-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 1.75rem;
+  }
+
   .gallery-grid {
     columns: 3;
     column-gap: 0.75rem;
@@ -447,6 +509,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   @media (max-width: 480px) {
     .gallery-grid { columns: 1; }
+  }
+
+  @media (max-width: 680px) {
+    .gallery-section-inner { padding: 3.5rem 1.25rem; }
   }
 </style>
 
