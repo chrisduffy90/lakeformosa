@@ -41,37 +41,8 @@ import SignupStrip from '../components/SignupStrip.astro';
         <span class="section-label">Coming Up</span>
         <div>
           <h2 class="section-heading">What's happening soon</h2>
-          <div class="event-list">
-            <div class="event-row">
-              <div class="event-date-block">
-                <div class="event-month">May</div>
-                <div class="event-day">13</div>
-              </div>
-              <div class="event-info">
-                <h3>General Neighborhood Meeting</h3>
-                <p class="event-meta">7:00 PM · Loch Haven Park Pavilion</p>
-              </div>
-            </div>
-            <div class="event-row">
-              <div class="event-date-block">
-                <div class="event-month">May</div>
-                <div class="event-day">24</div>
-              </div>
-              <div class="event-info">
-                <h3>Lake Cleanup Day</h3>
-                <p class="event-meta">9:00 AM · Lake Formosa Shoreline</p>
-              </div>
-            </div>
-            <div class="event-row">
-              <div class="event-date-block">
-                <div class="event-month">Jun</div>
-                <div class="event-day">10</div>
-              </div>
-              <div class="event-info">
-                <h3>Summer Block Party</h3>
-                <p class="event-meta">5:00 PM · Virginia Drive Park</p>
-              </div>
-            </div>
+          <div id="home-event-list" class="event-list">
+            <p class="loading-msg">Loading…</p>
           </div>
           <p style="margin-top: 1.5rem;"><a href="/events" class="text-link">Full calendar →</a></p>
         </div>
@@ -85,6 +56,47 @@ import SignupStrip from '../components/SignupStrip.astro';
     subtext="Get event reminders and neighborhood news delivered to your inbox."
   />
 </BaseLayout>
+
+<script>
+  import { apiFetch } from '../lib/api';
+
+  type Evt = { id: string; title: string; date: string; time: string; location: string };
+
+  function fmtMonth(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  }
+  function fmtDay(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { day: 'numeric' });
+  }
+
+  async function loadHomeEvents() {
+    const list = document.getElementById('home-event-list')!;
+    try {
+      const res = await apiFetch('/events');
+      const data = (await res.json() as Evt[]).slice(0, 3);
+      if (data.length === 0) {
+        list.innerHTML = '<p class="loading-msg">No upcoming events scheduled. Check back soon.</p>';
+        return;
+      }
+      list.innerHTML = data.map(ev => `
+        <div class="event-row">
+          <div class="event-date-block">
+            <div class="event-month">${fmtMonth(ev.date)}</div>
+            <div class="event-day">${fmtDay(ev.date)}</div>
+          </div>
+          <div class="event-info">
+            <h3>${ev.title}</h3>
+            <p class="event-meta">${ev.time} · ${ev.location}</p>
+          </div>
+        </div>
+      `).join('');
+    } catch {
+      list.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Could not load events.</p>';
+    }
+  }
+
+  loadHomeEvents();
+</script>
 
 <style>
   .home-hero {
