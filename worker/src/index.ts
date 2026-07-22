@@ -152,7 +152,7 @@ export default {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'LFNA Admin <onboarding@resend.dev>',
+              from: 'LFNA Admin <admin@lakeformosa.org>',
               to: [normalized],
               subject: 'Your Lake Formosa NA sign-in link',
               text: `Hi ${authorized[0].name || 'there'},\n\nClick the link below to sign in to the LFNA admin panel. This link expires in 1 hour and can only be used once.\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.`,
@@ -535,7 +535,7 @@ export default {
           method: 'POST',
           headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: 'LFNA Contact Form <onboarding@resend.dev>',
+            from: 'LFNA Contact Form <contact@lakeformosa.org>',
             to: ['lakeformosanaorl@gmail.com', 'chrisduffy90@gmail.com'],
             reply_to: email.trim().toLowerCase(),
             subject: `New contact: ${subject.trim()}`,
