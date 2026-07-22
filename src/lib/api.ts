@@ -34,7 +34,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
 export async function adminFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const sessionId = getSessionId() ?? '';
   const headers = new Headers(options.headers as HeadersInit | undefined);
-  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  const isFormData = options.body instanceof FormData;
+  if (!isFormData && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   headers.set('X-Session-Id', sessionId);
   return fetch(`${BASE}${path}`, { ...options, headers });
 }

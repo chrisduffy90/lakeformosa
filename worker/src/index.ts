@@ -145,7 +145,7 @@ export default {
           await sql`DELETE FROM admin_tokens WHERE expires_at < NOW()`;
 
           const link = `${SITE_URL}/admin/verify?token=${token}`;
-          await fetch('https://api.resend.com/emails', {
+          const emailRes = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${env.RESEND_API_KEY}`,
@@ -158,6 +158,7 @@ export default {
               text: `Hi ${authorized[0].name || 'there'},\n\nClick the link below to sign in to the LFNA admin panel. This link expires in 1 hour and can only be used once.\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.`,
             }),
           });
+          if (!emailRes.ok) console.error('resend: magic link send failed', await emailRes.text());
         }
 
         return json({ ok: true }, 200, origin);
@@ -404,18 +405,22 @@ export default {
       // ── EVENTS ────────────────────────────────────────────────────────────────
 
       // GET /events — public upcoming, or all with ?all=1
+      // date is cast to text so it serializes as plain YYYY-MM-DD instead of a
+      // JS Date object (which JSON.stringify turns into a full ISO timestamp).
       if (pathname === '/events' && request.method === 'GET') {
         const showAll = url.searchParams.get('all') === '1';
         const rows = showAll
-          ? await sql`SELECT * FROM events ORDER BY date`
-          : await sql`SELECT * FROM events WHERE date >= CURRENT_DATE ORDER BY date`;
+          ? await sql`SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at FROM events ORDER BY date`
+          : await sql`SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at FROM events WHERE date >= CURRENT_DATE ORDER BY date`;
         return json(rows, 200, origin);
       }
 
       // GET /events/:id — public
       const eventMatch = pathname.match(/^\/events\/([^/]+)$/);
       if (eventMatch && request.method === 'GET') {
-        const rows = await sql`SELECT * FROM events WHERE id = ${eventMatch[1]}`;
+        const rows = await sql`
+          SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at
+          FROM events WHERE id = ${eventMatch[1]}`;
         if (!rows.length) return json({ error: 'Not found' }, 404, origin);
         return json(rows[0], 200, origin);
       }
@@ -428,7 +433,7 @@ export default {
         const rows = await sql`
           INSERT INTO events (title, date, time, location, description)
           VALUES (${data.title}, ${data.date}, ${data.time}, ${data.location}, ${data.description ?? ''})
-          RETURNING *`;
+          RETURNING id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at`;
         return json(rows[0], 201, origin);
       }
 
@@ -445,7 +450,7 @@ export default {
             location    = ${data.location},
             description = ${data.description ?? ''}
           WHERE id = ${eventMatch[1]}
-          RETURNING *`;
+          RETURNING id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at`;
         if (!rows.length) return json({ error: 'Not found' }, 404, origin);
         return json(rows[0], 200, origin);
       }
@@ -526,7 +531,7 @@ export default {
           VALUES (${name.trim()}, ${email.trim().toLowerCase()}, ${subject.trim()}, ${message.trim()})
           RETURNING *`;
 
-        await fetch('https://api.resend.com/emails', {
+        const contactEmailRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -537,6 +542,7 @@ export default {
             text: `Name: ${name.trim()}\nEmail: ${email.trim()}\nSubject: ${subject.trim()}\n\n${message.trim()}`,
           }),
         });
+        if (!contactEmailRes.ok) console.error('resend: contact email send failed', await contactEmailRes.text());
 
         return json({ ok: true, data: rows[0] }, 200, origin);
       }
