@@ -507,6 +507,20 @@ export default {
             ${(email as string).trim().toLowerCase()}, ${(address as string).trim()},
             ${interests as string[]}
           ) RETURNING *`;
+
+        const giEmailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'LFNA Get Involved Form <contact@lakeformosa.org>',
+            to: ['lakeformosanaorl@gmail.com', 'chrisduffy90@gmail.com'],
+            reply_to: (email as string).trim().toLowerCase(),
+            subject: `New Get Involved signup: ${(first_name as string).trim()} ${(last_name as string).trim()}`,
+            text: `Name: ${(first_name as string).trim()} ${(last_name as string).trim()}\nEmail: ${(email as string).trim()}\nAddress: ${(address as string).trim()}\nInterests: ${(interests as string[]).join(', ') || '(none selected)'}`,
+          }),
+        });
+        if (!giEmailRes.ok) console.error('resend: get-involved email send failed', await giEmailRes.text());
+
         return json({ ok: true, data: rows[0] }, 200, origin);
       }
 
