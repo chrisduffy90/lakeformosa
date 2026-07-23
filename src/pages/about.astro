@@ -22,15 +22,15 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
         <div class="section-body">
           <h2 class="section-heading">A neighborhood shaped by its lake</h2>
           <p>Lake Formosa is one of Orlando's most distinctive urban neighborhoods, centered around the shimmering 70-acre lake that gives it its name. Bordered by the Loch Haven Cultural Park, home to the Orlando Museum of Art, the Orlando Science Center, the Orlando Repertory Theatre, and Harriett's Orlando Ballet Centre, the neighborhood blends natural beauty with a rich civic life that has been building since the early 20th century.</p>
-          <p>The area features craftsman bungalows, mid-century modern homes, and newer infill housing woven together by a mature tree canopy and streets that remain genuinely walkable. Proximity to Mills Avenue, the cultural park, and downtown Orlando make it one of central Florida's most sought-after addresses.</p>
+          <p>The area features craftsman bungalows, mid-century modern homes, and newer housing woven together by a mature tree canopy and streets that remain genuinely walkable. Proximity to Mills Avenue, the cultural park, Lake Ivanhoe, and downtown Orlando make it one of central Florida's most sought-after addresses.</p>
           <p>The Lake Formosa Neighborhood Association was founded to preserve that character by advocating at city hall on zoning and development decisions, organizing the community around shared concerns, and protecting the lake and green spaces that define the neighborhood's identity.</p>
         </div>
       </div>
+    </div>
 
-      <!-- MAP: full container width below the text grid -->
-      <div class="map-container fade-in">
-        <div id="map"></div>
-      </div>
+    <!-- MAP: full viewport width, breaks out of the section-inner container -->
+    <div class="map-container fade-in">
+      <div id="map"></div>
     </div>
   </section>
 
@@ -43,7 +43,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
           <h2 class="section-heading">What we stand for</h2>
           <p><strong style="font-weight: 500; color: var(--text-primary);">Advocacy.</strong> We represent resident interests at City Hall, in front of planning and zoning boards, and with elected officials on every issue that affects our neighborhood.</p>
           <p><strong style="font-weight: 500; color: var(--text-primary);">Community.</strong> General meetings, volunteer events, and block parties that build the kind of connections that make a neighborhood more than a collection of houses.</p>
-          <p><strong style="font-weight: 500; color: var(--text-primary);">Stewardship.</strong> We work to protect the lake's water quality, the neighborhood's tree canopy, and the historic character of the built environment.</p>
+          <p><strong style="font-weight: 500; color: var(--text-primary);">Stewardship.</strong> We work to protect the lake's water quality, the neighborhood's tree canopy, the wildlife that calls the lake home, and the historic character of the built environment.</p>
           <p><strong style="font-weight: 500; color: var(--text-primary);">Communication.</strong> We keep residents informed and make it easy to get involved, whether that's attending a meeting, joining a committee, or just signing up for updates.</p>
         </div>
       </div>
@@ -57,7 +57,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
         <span class="section-label">Get Involved</span>
         <div>
           <h2 class="section-heading">Live in Lake Formosa? We want to hear from you.</h2>
-          <p class="get-involved-intro">Whether you want to attend a meeting, volunteer for an event, join a committee, or eventually serve on the board — fill out this form and someone will be in touch. The more neighbors who participate, the stronger the association.</p>
+          <p class="get-involved-intro">Whether you want to attend a meeting, volunteer for an event, join a committee, or eventually serve on the board — fill out this form. The more neighbors who participate, the stronger the association.</p>
 
           <form
             class="get-involved-form"
@@ -308,7 +308,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
   /* ── MAP ── */
   .map-container {
     margin-top: 3rem;
-    border: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     overflow: hidden;
   }
   #map { width: 100%; height: 440px; }

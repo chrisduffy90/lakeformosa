@@ -16,7 +16,7 @@ interface RateLimit {
 const ALLOWED_ORIGINS = [
   'https://lakeformosa.org',
   'https://www.lakeformosa.org',
-  'http://localhost:4322',
+  'http://localhost:4321',
 ];
 
 const SITE_URL = 'https://lakeformosa.org';
