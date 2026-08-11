@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL;
 ---
 
 <BaseLayout title="Dues & Donations | Lake Formosa Neighborhood Association">
@@ -16,6 +18,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="section-grid fade-in">
         <span class="section-label">Annual Dues</span>
         <div>
+          <div class="info-box" id="payment-success-banner" style="display:none; border-left-color:#16a34a; margin-bottom:1.75rem">
+            <strong>Thank you!</strong> Your payment was received. A confirmation has been sent to your email.
+          </div>
+          <div class="info-box" id="payment-canceled-banner" style="display:none; margin-bottom:1.75rem">
+            Payment was canceled — no charge was made. You can try again below.
+          </div>
           <h2 class="section-heading">Support your neighborhood association</h2>
           <p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.7;margin-bottom:2rem;">
             Membership dues: <strong style="color:var(--text-primary)">$20 per household per year</strong>, due by January 31st. Dues-paying members are eligible to vote in board elections and on matters brought to the general membership.
@@ -61,17 +69,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <div class="donation-cta-wrap">
-              <button
-                class="donate-btn"
-                id="donate-btn"
-                disabled
-                title="Payment processing coming soon — we're setting up our account"
-                aria-disabled="true"
-              >
+              <button class="donate-btn" id="donate-btn">
                 Pay <span id="selected-amount">$20</span> →
               </button>
+              <span class="field-error" id="donate-error"></span>
               <p class="donate-note">
-                Online payment coming soon. We're finishing the setup with our bank and Stripe.
+                You'll be redirected to Stripe to complete your payment securely.
               </p>
             </div>
           </div>
@@ -143,13 +146,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 </BaseLayout>
 
-<script is:inline>
+<script define:vars={{ apiUrl }}>
+  // Payment redirect banner
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('success') === 'true') {
+    document.getElementById('payment-success-banner').style.display = '';
+  } else if (params.get('canceled') === 'true') {
+    document.getElementById('payment-canceled-banner').style.display = '';
+  }
+
   // Amount selector
   const btns = document.querySelectorAll('.amount-btn');
   const selectedLabel = document.getElementById('selected-amount');
   const customWrap = document.getElementById('custom-amount-wrap');
   const customInput = document.getElementById('custom-amount');
+  const donateBtn = document.getElementById('donate-btn');
+  const donateError = document.getElementById('donate-error');
   let currentAmount = 20;
+  let isCustom = false;
 
   btns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -158,10 +172,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       const val = btn.dataset.amount;
       if (val === 'custom') {
+        isCustom = true;
         customWrap.style.display = '';
         customInput.focus();
         selectedLabel.textContent = customInput.value ? `$${customInput.value}` : '$—';
       } else {
+        isCustom = false;
         customWrap.style.display = 'none';
         currentAmount = parseInt(val);
         selectedLabel.textContent = `$${val}`;
@@ -172,6 +188,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   customInput?.addEventListener('input', () => {
     const v = parseFloat(customInput.value);
     selectedLabel.textContent = v > 0 ? `$${Math.floor(v)}` : '$—';
+  });
+
+  donateBtn.addEventListener('click', async () => {
+    const amount = isCustom ? Math.floor(parseFloat(customInput.value)) : currentAmount;
+    donateError.textContent = '';
+
+    if (!amount || amount < 1) {
+      donateError.textContent = 'Please enter a valid amount.';
+      return;
+    }
+
+    const originalLabel = donateBtn.innerHTML;
+    donateBtn.disabled = true;
+    donateBtn.textContent = 'Redirecting...';
+
+    try {
+      const res = await fetch(`${apiUrl}/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      window.location.href = data.url;
+    } catch {
+      donateError.textContent = 'Something went wrong. Please try again or contact the treasurer.';
+      donateBtn.disabled = false;
+      donateBtn.innerHTML = originalLabel;
+    }
   });
 
   // Fade-in observer
@@ -304,10 +349,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 0.95rem;
     font-weight: 500;
     letter-spacing: 0.04em;
-    cursor: not-allowed;
-    opacity: 0.55;
+    cursor: pointer;
     transition: opacity 0.2s;
     position: relative;
+  }
+
+  .donate-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .donate-note {

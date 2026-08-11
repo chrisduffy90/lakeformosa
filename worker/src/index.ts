@@ -5,6 +5,7 @@ export interface Env {
   RESEND_API_KEY: string;
   ADMIN_KEY: string;
   TURNSTILE_SECRET_KEY: string;
+  STRIPE_SECRET_KEY: string;
   RATE_LIMITER: RateLimit;
   PHOTOS: R2Bucket;
 }
@@ -461,6 +462,42 @@ export default {
         if (deny) return deny;
         await sql`DELETE FROM events WHERE id = ${eventMatch[1]}`;
         return json({ ok: true }, 200, origin);
+      }
+
+      // ── PAYMENTS ──────────────────────────────────────────────────────────────
+
+      // POST /create-checkout-session — public, creates a Stripe Checkout session for dues/donations
+      if (pathname === '/create-checkout-session' && request.method === 'POST') {
+        const { amount } = await request.json() as { amount?: number };
+        if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 1 || amount > 10000) {
+          return json({ error: 'Amount must be between $1 and $10,000' }, 400, origin);
+        }
+
+        const params = new URLSearchParams();
+        params.set('mode', 'payment');
+        params.set('success_url', `${SITE_URL}/dues?success=true`);
+        params.set('cancel_url', `${SITE_URL}/dues?canceled=true`);
+        params.set('line_items[0][quantity]', '1');
+        params.set('line_items[0][price_data][currency]', 'usd');
+        params.set('line_items[0][price_data][unit_amount]', String(Math.round(amount * 100)));
+        params.set('line_items[0][price_data][product_data][name]', 'Lake Formosa Neighborhood Association — Dues & Donations');
+
+        const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: params,
+        });
+
+        if (!stripeRes.ok) {
+          console.error('stripe: checkout session creation failed', await stripeRes.text());
+          return json({ error: 'Payment setup failed. Please try again.' }, 502, origin);
+        }
+
+        const session = await stripeRes.json() as { url: string };
+        return json({ url: session.url }, 200, origin);
       }
 
       // ── SIGNUPS / GET-INVOLVED / CONTACT ──────────────────────────────────────
