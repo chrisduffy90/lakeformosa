@@ -6,6 +6,7 @@ export interface Env {
   ADMIN_KEY: string;
   TURNSTILE_SECRET_KEY: string;
   STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
   RATE_LIMITER: RateLimit;
   PHOTOS: R2Bucket;
 }
@@ -79,6 +80,27 @@ function sniffImageType(bytes: Uint8Array): string | null {
     bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
   ) return 'image/webp';
   return null;
+}
+
+// Verifies Stripe's webhook signature so /webhooks/stripe can't be spoofed by
+// posting a fake checkout.session.completed to trigger receipt/notification emails.
+async function verifyStripeSignature(payload: string, sigHeader: string | null, secret: string): Promise<boolean> {
+  if (!sigHeader) return false;
+  const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=') as [string, string]));
+  const timestamp = parts['t'];
+  const expectedSig = parts['v1'];
+  if (!timestamp || !expectedSig) return false;
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signed = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${timestamp}.${payload}`));
+  const computedSig = Array.from(new Uint8Array(signed)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return computedSig === expectedSig;
 }
 
 type Sql = ReturnType<typeof neon>;
@@ -500,6 +522,56 @@ export default {
         return json({ url: session.url }, 200, origin);
       }
 
+      // POST /webhooks/stripe — Stripe calls this on checkout.session.completed to
+      // send the payer a receipt and notify the treasury inbox. Body must be read as
+      // raw text (not request.json()) since signature verification needs the exact bytes.
+      if (pathname === '/webhooks/stripe' && request.method === 'POST') {
+        const payload = await request.text();
+        const verified = await verifyStripeSignature(
+          payload,
+          request.headers.get('Stripe-Signature'),
+          env.STRIPE_WEBHOOK_SECRET,
+        );
+        if (!verified) return json({ error: 'Invalid signature' }, 400, origin);
+
+        const event = JSON.parse(payload) as { type: string; data: { object: Record<string, any> } };
+
+        if (event.type === 'checkout.session.completed') {
+          const session = event.data.object;
+          const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
+          const payerEmail = session.customer_details?.email as string | undefined;
+          const payerName = (session.customer_details?.name as string | undefined) || 'there';
+
+          if (payerEmail) {
+            const receiptRes = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'Lake Formosa Neighborhood Association <treasurer@lakeformosa.org>',
+                to: [payerEmail],
+                subject: 'Your Lake Formosa Neighborhood Association payment receipt',
+                text: `Hi ${payerName},\n\nThank you for your payment of $${amount} to the Lake Formosa Neighborhood Association.\n\nThis email confirms your payment was received successfully. If you have any questions about your membership status or this payment, just reply to this email or contact the treasurer.\n\nThank you for supporting your neighborhood!\n\nLake Formosa Neighborhood Association`,
+              }),
+            });
+            if (!receiptRes.ok) console.error('resend: payment receipt send failed', await receiptRes.text());
+          }
+
+          const notifyRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'LFNA Payments <treasurer@lakeformosa.org>',
+              to: ['lakeformosaneighbors@gmail.com', 'chrisduffy90@gmail.com'],
+              subject: `New payment received: $${amount}`,
+              text: `A new payment was received via the website.\n\nAmount: $${amount}\nPayer: ${payerName}\nEmail: ${payerEmail ?? '(not provided)'}\nStripe session: ${session.id}`,
+            }),
+          });
+          if (!notifyRes.ok) console.error('resend: treasury notification send failed', await notifyRes.text());
+        }
+
+        return json({ received: true }, 200, origin);
+      }
+
       // ── SIGNUPS / GET-INVOLVED / CONTACT ──────────────────────────────────────
 
       // POST /signup
@@ -550,7 +622,7 @@ export default {
           headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'LFNA Get Involved Form <contact@lakeformosa.org>',
-            to: ['lakeformosanaorl@gmail.com', 'chrisduffy90@gmail.com'],
+            to: ['lakeformosaneighbors@gmail.com', 'chrisduffy90@gmail.com'],
             reply_to: (email as string).trim().toLowerCase(),
             subject: `New Get Involved signup: ${(first_name as string).trim()} ${(last_name as string).trim()}`,
             text: `Name: ${(first_name as string).trim()} ${(last_name as string).trim()}\nEmail: ${(email as string).trim()}\nAddress: ${(address as string).trim()}\nInterests: ${(interests as string[]).join(', ') || '(none selected)'}`,
@@ -587,7 +659,7 @@ export default {
           headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'LFNA Contact Form <contact@lakeformosa.org>',
-            to: ['lakeformosanaorl@gmail.com', 'chrisduffy90@gmail.com'],
+            to: ['lakeformosaneighbors@gmail.com', 'chrisduffy90@gmail.com'],
             reply_to: email.trim().toLowerCase(),
             subject: `New contact: ${subject.trim()}`,
             text: `Name: ${name.trim()}\nEmail: ${email.trim()}\nSubject: ${subject.trim()}\n\n${message.trim()}`,
