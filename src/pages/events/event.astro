@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Event | Lake Formosa Neighborhood Association">
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <a href="/events" class="back-link">← Events &amp; Meetings</a>
+    </div>
+  </div>
+
+  <section class="surface">
+    <div class="section-inner">
+      <div id="event-content" class="event-layout fade-in" style="display:none">
+        <div class="event-date-col">
+          <div class="event-date-block">
+            <div class="event-month" id="detail-month"></div>
+            <div class="event-day" id="detail-day"></div>
+          </div>
+        </div>
+        <div class="event-info-col">
+          <h1 class="event-title" id="detail-title"></h1>
+          <p class="event-meta" id="detail-meta"></p>
+          <p class="event-desc" id="detail-desc"></p>
+          <div class="event-details-body" id="detail-body" style="display:none"></div>
+          <div class="event-footer">
+            <a href="/events" class="text-link">← Back to events</a>
+          </div>
+        </div>
+      </div>
+      <p id="detail-error" style="display:none;color:#b91c1c;font-size:0.9rem">Event not found. <a href="/events">Return to the events page.</a></p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { apiFetch } from '../../lib/api';
+
+  type Evt = { id: string; title: string; date: string; time: string; location: string; description: string; details?: string };
+
+  function fmtMonth(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  }
+  function fmtDay(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleString('en-US', { day: 'numeric' });
+  }
+  function fmtFullDate(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  async function load() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id) { showError(); return; }
+
+    try {
+      const res = await apiFetch(`/events/${id}`);
+      if (!res.ok) { showError(); return; }
+      const ev = await res.json() as Evt;
+
+      document.title = `${ev.title} | Lake Formosa Neighborhood Association`;
+
+      document.getElementById('detail-month')!.textContent = fmtMonth(ev.date);
+      document.getElementById('detail-day')!.textContent = fmtDay(ev.date);
+      document.getElementById('detail-title')!.textContent = ev.title;
+      document.getElementById('detail-meta')!.textContent = `${fmtFullDate(ev.date)} · ${ev.time} · ${ev.location}`;
+      document.getElementById('detail-desc')!.textContent = ev.description;
+
+      if (ev.details && ev.details.trim()) {
+        const bodyEl = document.getElementById('detail-body')!;
+        bodyEl.textContent = ev.details;
+        bodyEl.style.display = '';
+      }
+
+      document.getElementById('event-content')!.style.display = '';
+    } catch {
+      showError();
+    }
+  }
+
+  function showError() {
+    document.getElementById('detail-error')!.style.display = '';
+  }
+
+  load();
+</script>
+
+<script is:inline>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+<style>
+  .back-link {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--text-primary); }
+
+  .page-hero-inner { padding-bottom: 2rem; }
+
+  .event-layout {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 2.5rem;
+    align-items: start;
+    max-width: 680px;
+  }
+
+  .event-date-col { padding-top: 0.1rem; }
+
+  .event-date-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--accent-light, #f0f4ff);
+    border: 1px solid var(--border);
+    padding: 0.75rem 0;
+    border-radius: 2px;
+  }
+  .event-month { font-size: 0.65rem; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; font-weight: 600; }
+  .event-day { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--text-primary); line-height: 1.1; }
+
+  .event-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text-primary);
+    margin-bottom: 0.6rem;
+  }
+
+  .event-meta { font-size: 0.85rem; color: var(--accent); margin-bottom: 1.25rem; }
+
+  .event-desc {
+    font-size: 0.97rem;
+    color: #46453f;
+    line-height: 1.85;
+    margin-bottom: 1.5rem;
+    max-width: 560px;
+  }
+
+  .event-details-body {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    white-space: pre-line;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    margin-bottom: 2rem;
+    max-width: 560px;
+  }
+
+  .event-footer { border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1rem; }
+
+  @media (max-width: 640px) {
+    .event-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+    .event-date-block { width: 80px; }
+    .event-title { font-size: 1.6rem; }
+  }
+</style>

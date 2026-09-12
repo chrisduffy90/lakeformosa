@@ -433,8 +433,8 @@ export default {
       if (pathname === '/events' && request.method === 'GET') {
         const showAll = url.searchParams.get('all') === '1';
         const rows = showAll
-          ? await sql`SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at FROM events ORDER BY date`
-          : await sql`SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at FROM events WHERE date >= CURRENT_DATE ORDER BY date`;
+          ? await sql`SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, details, created_at FROM events ORDER BY date`
+          : await sql`SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, details, created_at FROM events WHERE date >= CURRENT_DATE ORDER BY date`;
         return json(rows, 200, origin);
       }
 
@@ -442,7 +442,7 @@ export default {
       const eventMatch = pathname.match(/^\/events\/([^/]+)$/);
       if (eventMatch && request.method === 'GET') {
         const rows = await sql`
-          SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at
+          SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, details, created_at
           FROM events WHERE id = ${eventMatch[1]}`;
         if (!rows.length) return json({ error: 'Not found' }, 404, origin);
         return json(rows[0], 200, origin);
@@ -454,9 +454,9 @@ export default {
         if (deny) return deny;
         const data = await request.json() as Record<string, unknown>;
         const rows = await sql`
-          INSERT INTO events (title, date, time, location, description)
-          VALUES (${data.title}, ${data.date}, ${data.time}, ${data.location}, ${data.description ?? ''})
-          RETURNING id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at`;
+          INSERT INTO events (title, date, time, location, description, details)
+          VALUES (${data.title}, ${data.date}, ${data.time}, ${data.location}, ${data.description ?? ''}, ${data.details ?? ''})
+          RETURNING id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, details, created_at`;
         return json(rows[0], 201, origin);
       }
 
@@ -471,9 +471,10 @@ export default {
             date        = ${data.date},
             time        = ${data.time},
             location    = ${data.location},
-            description = ${data.description ?? ''}
+            description = ${data.description ?? ''},
+            details     = ${data.details ?? ''}
           WHERE id = ${eventMatch[1]}
-          RETURNING id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, created_at`;
+          RETURNING id, title, to_char(date, 'YYYY-MM-DD') AS date, time, location, description, details, created_at`;
         if (!rows.length) return json({ error: 'Not found' }, 404, origin);
         return json(rows[0], 200, origin);
       }
@@ -549,6 +550,7 @@ export default {
               body: JSON.stringify({
                 from: 'Lake Formosa Neighborhood Association <treasurer@lakeformosa.org>',
                 to: [payerEmail],
+                bcc: ['lakeformosaneighbors@gmail.com'],
                 subject: 'Your Lake Formosa Neighborhood Association payment receipt',
                 text: `Hi ${payerName},\n\nThank you for your payment of $${amount} to the Lake Formosa Neighborhood Association.\n\nThis email confirms your payment was received successfully. If you have any questions about your membership status or this payment, just reply to this email or contact the treasurer.\n\nThank you for supporting your neighborhood!\n\nLake Formosa Neighborhood Association`,
               }),

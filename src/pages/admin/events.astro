@@ -51,6 +51,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <div class="form-field">
             <label>Description *</label>
             <textarea name="description" rows="3" required></textarea>
+            <span class="field-hint">Short summary shown in the events list.</span>
+          </div>
+          <div class="form-field">
+            <label>Additional details</label>
+            <textarea name="details" rows="5"></textarea>
+            <span class="field-hint">Optional — shown on the event's own page (parking, agenda, what to bring, etc). Line breaks are preserved.</span>
           </div>
           <span class="field-error" id="add-error"></span>
           <button type="submit" id="add-btn">Add Event →</button>
@@ -85,6 +91,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div class="form-field">
           <label>Description *</label>
           <textarea name="description" rows="3" required></textarea>
+          <span class="field-hint">Short summary shown in the events list.</span>
+        </div>
+        <div class="form-field">
+          <label>Additional details</label>
+          <textarea name="details" rows="5"></textarea>
+          <span class="field-hint">Optional — shown on the event's own page (parking, agenda, what to bring, etc). Line breaks are preserved.</span>
         </div>
         <span class="field-error" id="edit-error"></span>
         <div class="modal-actions">
@@ -99,7 +111,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <script>
   import { getSessionId, adminFetch } from '../../lib/api';
 
-  type Evt = { id: string; title: string; date: string; time: string; location: string; description: string };
+  type Evt = { id: string; title: string; date: string; time: string; location: string; description: string; details: string };
 
   if (!getSessionId()) window.location.href = '/admin';
 
@@ -146,8 +158,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <div class="event-title">${esc(ev.title)}${isPast ? ' <span class="past-tag">Past</span>' : ''}</div>
             <div class="event-meta">${esc(ev.time)} &middot; ${esc(ev.location)}</div>
             <div class="event-desc">${esc(ev.description)}</div>
+            ${ev.details ? '<div class="details-tag">Has additional details</div>' : ''}
           </div>
           <div class="event-actions">
+            <a class="btn-view" href="/events/event?id=${ev.id}" target="_blank">View</a>
             <button class="btn-edit" data-id="${ev.id}">Edit</button>
             <button class="btn-delete" data-id="${ev.id}">Delete</button>
           </div>
@@ -193,6 +207,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     (editForm.elements.namedItem('time') as HTMLInputElement).value = ev.time;
     (editForm.elements.namedItem('location') as HTMLInputElement).value = ev.location;
     (editForm.elements.namedItem('description') as HTMLTextAreaElement).value = ev.description;
+    (editForm.elements.namedItem('details') as HTMLTextAreaElement).value = ev.details ?? '';
     document.getElementById('edit-error')!.textContent = '';
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -214,6 +229,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const payload = {
       title: fd.get('title'), date: fd.get('date'), time: fd.get('time'),
       location: fd.get('location'), description: fd.get('description') ?? '',
+      details: fd.get('details') ?? '',
     };
     const btn = document.getElementById('edit-save-btn') as HTMLButtonElement;
     btn.textContent = 'Saving…'; btn.disabled = true;
@@ -229,6 +245,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const payload = {
       title: fd.get('title'), date: fd.get('date'), time: fd.get('time'),
       location: fd.get('location'), description: fd.get('description') ?? '',
+      details: fd.get('details') ?? '',
     };
     const btn = document.getElementById('add-btn') as HTMLButtonElement;
     const errEl = document.getElementById('add-error')!;
@@ -307,6 +324,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .event-meta { font-size: 0.78rem; color: var(--accent); }
   .event-desc { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.55; margin-top: 0.2rem; }
 
+  .details-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    color: var(--accent);
+    margin-top: 0.4rem;
+  }
+
   .past-tag {
     display: inline-block;
     font-size: 0.65rem;
@@ -322,14 +346,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   .event-actions { display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0; }
 
-  .btn-edit, .btn-delete {
+  .btn-edit, .btn-delete, .btn-view {
     padding: 0.35rem 0.8rem;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.75rem;
     cursor: pointer;
     border-radius: 2px;
     white-space: nowrap;
+    text-align: center;
   }
+  .btn-view { background: none; border: 1px solid var(--border); color: var(--text-secondary); }
+  .btn-view:hover { border-color: var(--accent); color: var(--accent); }
   .btn-edit { background: none; border: 1px solid var(--border); color: var(--text-secondary); }
   .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
   .btn-delete { background: none; border: 1px solid #fca5a5; color: #b91c1c; }
@@ -364,6 +391,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .form-field input:focus, .form-field textarea:focus { border-color: var(--accent); }
 
   .field-error { display: block; font-size: 0.82rem; color: #b91c1c; min-height: 1.2em; }
+  .field-hint { font-size: 0.76rem; color: var(--text-secondary); }
 
   .event-form > button[type=submit] {
     align-self: flex-start;

@@ -68,7 +68,7 @@ import SignupStrip from '../components/SignupStrip.astro';
         return;
       }
       list.innerHTML = data.map(ev => `
-        <div class="event-row">
+        <a href="/events/event?id=${ev.id}" class="event-row">
           <div class="event-date-block">
             <div class="event-month">${fmtMonth(ev.date)}</div>
             <div class="event-day">${fmtDay(ev.date)}</div>
@@ -78,7 +78,7 @@ import SignupStrip from '../components/SignupStrip.astro';
             <p class="event-meta">${ev.time} · ${ev.location}</p>
             <p class="event-desc">${ev.description}</p>
           </div>
-        </div>
+        </a>
       `).join('');
     } catch {
       list.innerHTML = '<p class="loading-msg" style="color:#b91c1c">Could not load events. Please try again later.</p>';

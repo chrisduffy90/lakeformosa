@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS events (
   time        TEXT        NOT NULL,
   location    TEXT        NOT NULL,
   description TEXT        NOT NULL DEFAULT '',
+  details     TEXT        NOT NULL DEFAULT '',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
